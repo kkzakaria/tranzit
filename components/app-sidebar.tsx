@@ -1,0 +1,74 @@
+"use client"
+
+import { usePathname } from "next/navigation"
+import {
+  Home01Icon,
+  Folder01Icon,
+  Settings01Icon,
+  DashboardSquare01Icon,
+  UserIcon,
+} from "@hugeicons/core-free-icons"
+
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarInset,
+  SidebarItem,
+  SidebarPinToggle,
+  SidebarProvider,
+  SidebarSeparator,
+  SidebarTrigger,
+} from "@/components/sidebar"
+
+const activeItemClass = "data-[active]:bg-primary/10 data-[active]:text-primary data-[active]:font-semibold"
+
+export function AppSidebar({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+
+  return (
+    <SidebarProvider defaultPinned={false}>
+      <Sidebar>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarItem href="/" icon={Home01Icon} active={pathname === "/"} className={activeItemClass}>
+                Home
+              </SidebarItem>
+              <SidebarItem href="/dashboard" icon={DashboardSquare01Icon} active={pathname === "/dashboard"} className={activeItemClass}>
+                Dashboard
+              </SidebarItem>
+              <SidebarItem href="/projects" icon={Folder01Icon} active={pathname === "/projects"} className={activeItemClass}>
+                Projects
+              </SidebarItem>
+            </SidebarGroupContent>
+          </SidebarGroup>
+          <SidebarSeparator />
+          <SidebarGroup>
+            <SidebarGroupLabel>Account</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarItem href="/profile" icon={UserIcon} active={pathname === "/profile"} className={activeItemClass}>
+                Profile
+              </SidebarItem>
+              <SidebarItem href="/settings" icon={Settings01Icon} active={pathname === "/settings"} className={activeItemClass}>
+                Settings
+              </SidebarItem>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <SidebarPinToggle />
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset>
+        <header className="flex items-center px-4 py-3 md:hidden">
+          <SidebarTrigger />
+        </header>
+        {children}
+      </SidebarInset>
+    </SidebarProvider>
+  )
+}
