@@ -176,49 +176,65 @@ function SidebarMobile({
   const { mobileOpen, setMobileOpen, mobileMode } = useSidebar()
   const config = mobileModeConfig[mobileMode]
 
-  // Swipe-to-close refs (drawer mode only)
+  // Swipe-to-close refs
   const popupRef = useRef<HTMLDivElement>(null)
+  const touchStartX = useRef(0)
   const touchStartY = useRef(0)
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
     if (popupRef.current) {
       popupRef.current.style.transition = "none"
     }
   }, [])
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    const deltaY = e.touches[0].clientY - touchStartY.current
-    if (deltaY > 0 && popupRef.current) {
-      popupRef.current.style.transform = `translateY(${deltaY}px)`
-    }
-  }, [])
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!popupRef.current) return
+      const deltaX = e.touches[0].clientX - touchStartX.current
+      const deltaY = e.touches[0].clientY - touchStartY.current
+
+      if (mobileMode === "drawer" && deltaY > 0) {
+        popupRef.current.style.transform = `translateY(${deltaY}px)`
+      } else if (mobileMode === "sheet-left" && deltaX < 0) {
+        popupRef.current.style.transform = `translateX(${deltaX}px)`
+      } else if (mobileMode === "sheet-right" && deltaX > 0) {
+        popupRef.current.style.transform = `translateX(${deltaX}px)`
+      }
+    },
+    [mobileMode]
+  )
 
   const handleTouchEnd = useCallback(
     (e: React.TouchEvent) => {
-      const deltaY = e.changedTouches[0].clientY - touchStartY.current
       if (!popupRef.current) return
+      const deltaX = e.changedTouches[0].clientX - touchStartX.current
+      const deltaY = e.changedTouches[0].clientY - touchStartY.current
 
       popupRef.current.style.transition = "transform 200ms"
 
-      if (deltaY > 80) {
-        popupRef.current.style.transform = "translateY(100%)"
+      const shouldClose =
+        (mobileMode === "drawer" && deltaY > 80) ||
+        (mobileMode === "sheet-left" && deltaX < -80) ||
+        (mobileMode === "sheet-right" && deltaX > 80)
+
+      if (shouldClose) {
+        const dismissTransform =
+          mobileMode === "drawer"
+            ? "translateY(100%)"
+            : mobileMode === "sheet-left"
+              ? "translateX(-100%)"
+              : "translateX(100%)"
+        popupRef.current.style.transform = dismissTransform
         setTimeout(() => setMobileOpen(false), 200)
       } else {
-        popupRef.current.style.transform = "translateY(0)"
+        popupRef.current.style.transform =
+          mobileMode === "drawer" ? "translateY(0)" : "translateX(0)"
       }
     },
-    [setMobileOpen]
+    [mobileMode, setMobileOpen]
   )
-
-  const drawerTouchHandlers =
-    mobileMode === "drawer"
-      ? {
-          onTouchStart: handleTouchStart,
-          onTouchMove: handleTouchMove,
-          onTouchEnd: handleTouchEnd,
-        }
-      : {}
 
   return (
     <Dialog.Root open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -232,7 +248,9 @@ function SidebarMobile({
         />
         <Dialog.Popup
           ref={popupRef}
-          {...drawerTouchHandlers}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           className={cn(
             "z-50 bg-sidebar text-sidebar-foreground shadow-lg",
             config.position,
