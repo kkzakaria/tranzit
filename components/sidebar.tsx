@@ -120,30 +120,32 @@ function Sidebar({
         className="hidden shrink-0 transition-[width] duration-200 ease-linear motion-reduce:transition-none md:block"
         style={{ width: pinned ? expandedWidth : collapsedWidth }}
       >
-        <aside
-          role="navigation"
-          aria-label="Main navigation"
-          data-slot="sidebar"
-          data-state={state}
-          data-pinned={pinned ? "" : undefined}
-          className={cn(
-            "group/sidebar hidden h-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear motion-reduce:transition-none md:flex",
-            pinned ? "relative" : "absolute inset-y-0 left-0 z-10",
-            className
-          )}
-          style={{ width: expanded ? expandedWidth : collapsedWidth }}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-          onFocusCapture={() => setHovered(true)}
-          onBlurCapture={(e) => {
-            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-              setHovered(false)
-            }
-          }}
-          {...props}
-        >
-          {children}
-        </aside>
+        <Tooltip.Provider>
+          <aside
+            role="navigation"
+            aria-label="Main navigation"
+            data-slot="sidebar"
+            data-state={state}
+            data-pinned={pinned ? "" : undefined}
+            className={cn(
+              "group/sidebar hidden h-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear motion-reduce:transition-none md:flex",
+              pinned ? "relative" : "absolute inset-y-0 left-0 z-10",
+              className
+            )}
+            style={{ width: expanded ? expandedWidth : collapsedWidth }}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            onFocusCapture={() => setHovered(true)}
+            onBlurCapture={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                setHovered(false)
+              }
+            }}
+            {...props}
+          >
+            {children}
+          </aside>
+        </Tooltip.Provider>
       </div>
 
       {/* Mobile drawer */}
@@ -238,7 +240,16 @@ function SidebarMobile({
               ? "translateX(-100%)"
               : "translateX(100%)"
         popupRef.current.style.transform = dismissTransform
-        setTimeout(() => setMobileOpen(false), 200)
+        if (prefersReducedMotion) {
+          setMobileOpen(false)
+        } else {
+          const el = popupRef.current
+          const onEnd = () => {
+            el.removeEventListener("transitionend", onEnd)
+            setMobileOpen(false)
+          }
+          el.addEventListener("transitionend", onEnd, { once: true })
+        }
       } else {
         popupRef.current.style.transform =
           mobileMode === "drawer" ? "translateY(0)" : "translateX(0)"
@@ -442,55 +453,70 @@ function SidebarItem({
 }) {
   const { expanded, setMobileOpen } = useSidebar()
 
-  const Comp = href ? Link : "button"
+  const sharedClassName = cn(
+    "flex w-full items-center gap-2 group-data-[state=collapsed]/sidebar:gap-0 rounded-md px-2 py-1.5 text-sm font-medium outline-none transition-colors",
+    "hover:bg-foreground/[0.08] hover:text-foreground",
+    "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+    className
+  )
+
+  const content = (
+    <>
+      <span className="flex size-5 shrink-0 items-center justify-center">
+        <HugeiconsIcon icon={icon} className="size-4" />
+      </span>
+      <span
+        className={cn(
+          "truncate transition-opacity duration-200",
+          "group-data-[state=collapsed]/sidebar:opacity-0 group-data-[state=collapsed]/sidebar:w-0",
+          "group-data-[state=expanded]/sidebar:opacity-100 group-data-[state=expanded]/sidebar:w-auto"
+        )}
+      >
+        {children}
+      </span>
+    </>
+  )
 
   const inner = (
     <li data-slot="sidebar-item" className={cn("list-none")} {...props}>
-      <Comp
-        href={href as string}
-        data-active={active ? "" : undefined}
-        aria-current={active ? "page" : undefined}
-        className={cn(
-          "flex w-full items-center gap-2 group-data-[state=collapsed]/sidebar:gap-0 rounded-md px-2 py-1.5 text-sm font-medium outline-none transition-colors",
-          "hover:bg-foreground/[0.08] hover:text-foreground",
-          "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-          className
-        )}
-        onClick={() => setMobileOpen(false)}
-      >
-        <span className="flex size-5 shrink-0 items-center justify-center">
-          <HugeiconsIcon icon={icon} className="size-4" />
-        </span>
-        <span
-          className={cn(
-            "truncate transition-opacity duration-200",
-            "group-data-[state=collapsed]/sidebar:opacity-0 group-data-[state=collapsed]/sidebar:w-0",
-            "group-data-[state=expanded]/sidebar:opacity-100 group-data-[state=expanded]/sidebar:w-auto"
-          )}
+      {href ? (
+        <Link
+          href={href}
+          data-active={active ? "" : undefined}
+          aria-current={active ? "page" : undefined}
+          className={sharedClassName}
+          onClick={() => setMobileOpen(false)}
         >
-          {children}
-        </span>
-      </Comp>
+          {content}
+        </Link>
+      ) : (
+        <button
+          data-active={active ? "" : undefined}
+          aria-current={active ? "page" : undefined}
+          className={sharedClassName}
+          onClick={() => setMobileOpen(false)}
+        >
+          {content}
+        </button>
+      )}
     </li>
   )
 
   if (expanded) return inner
 
   return (
-    <Tooltip.Provider>
-      <Tooltip.Root>
-        <Tooltip.Trigger render={<div />}>
-          {inner}
-        </Tooltip.Trigger>
-        <Tooltip.Portal>
-          <Tooltip.Positioner side="right" sideOffset={8}>
-            <Tooltip.Popup className="rounded-md bg-foreground px-2 py-1 text-xs text-background shadow-md">
-              {children}
-            </Tooltip.Popup>
-          </Tooltip.Positioner>
-        </Tooltip.Portal>
-      </Tooltip.Root>
-    </Tooltip.Provider>
+    <Tooltip.Root>
+      <Tooltip.Trigger render={<div />}>
+        {inner}
+      </Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Positioner side="right" sideOffset={8}>
+          <Tooltip.Popup className="rounded-md bg-foreground px-2 py-1 text-xs text-background shadow-md">
+            {children}
+          </Tooltip.Popup>
+        </Tooltip.Positioner>
+      </Tooltip.Portal>
+    </Tooltip.Root>
   )
 }
 

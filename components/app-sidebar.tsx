@@ -1,5 +1,6 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import {
   Home01Icon,
   Folder01Icon,
@@ -26,19 +27,21 @@ import {
 const activeItemClass = "data-[active]:bg-primary/10 data-[active]:text-primary data-[active]:font-semibold"
 
 export function AppSidebar({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+
   return (
     <SidebarProvider defaultPinned={false}>
       <Sidebar>
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupContent>
-              <SidebarItem href="/" icon={Home01Icon} active className={activeItemClass}>
+              <SidebarItem href="/" icon={Home01Icon} active={pathname === "/"} className={activeItemClass}>
                 Home
               </SidebarItem>
-              <SidebarItem href="/dashboard" icon={DashboardSquare01Icon} className={activeItemClass}>
+              <SidebarItem href="/dashboard" icon={DashboardSquare01Icon} active={pathname === "/dashboard"} className={activeItemClass}>
                 Dashboard
               </SidebarItem>
-              <SidebarItem href="/projects" icon={Folder01Icon} className={activeItemClass}>
+              <SidebarItem href="/projects" icon={Folder01Icon} active={pathname === "/projects"} className={activeItemClass}>
                 Projects
               </SidebarItem>
             </SidebarGroupContent>
@@ -47,10 +50,10 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
           <SidebarGroup>
             <SidebarGroupLabel>Account</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarItem href="/profile" icon={UserIcon} className={activeItemClass}>
+              <SidebarItem href="/profile" icon={UserIcon} active={pathname === "/profile"} className={activeItemClass}>
                 Profile
               </SidebarItem>
-              <SidebarItem href="/settings" icon={Settings01Icon} className={activeItemClass}>
+              <SidebarItem href="/settings" icon={Settings01Icon} active={pathname === "/settings"} className={activeItemClass}>
                 Settings
               </SidebarItem>
             </SidebarGroupContent>

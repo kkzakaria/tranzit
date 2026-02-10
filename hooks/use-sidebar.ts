@@ -1,13 +1,6 @@
 "use client"
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react"
+import { createContext, useContext } from "react"
 
 const SIDEBAR_PINNED_KEY = "sidebar-pinned"
 
