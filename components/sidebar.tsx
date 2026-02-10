@@ -1,9 +1,12 @@
+// Documentation & usage examples: ./sidebar.md
+
 "use client"
 
 import * as React from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { Dialog } from "@base-ui/react/dialog"
 import { Tooltip } from "@base-ui/react/tooltip"
-import { Pin02Icon, PinOffIcon } from "@hugeicons/core-free-icons"
+import { Cancel01Icon, Menu01Icon, Pin02Icon, PinOffIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 
 import { cn } from "@/lib/utils"
@@ -27,6 +30,17 @@ function SidebarProvider({
 }: React.ComponentProps<"div"> & { defaultPinned?: boolean }) {
   const [pinned, setPinnedState] = useState(defaultPinned)
   const [hovered, setHovered] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Close mobile drawer when viewport crosses md breakpoint
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)")
+    const handler = () => {
+      if (mq.matches) setMobileOpen(false)
+    }
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
+  }, [])
 
   // Hydrate from localStorage
   useEffect(() => {
@@ -52,8 +66,8 @@ function SidebarProvider({
   const expanded = pinned || hovered
 
   const value = useMemo<SidebarContextValue>(
-    () => ({ pinned, hovered, expanded, setPinned, togglePinned, setHovered }),
-    [pinned, hovered, expanded, setPinned, togglePinned]
+    () => ({ pinned, hovered, expanded, mobileOpen, setPinned, togglePinned, setHovered, setMobileOpen }),
+    [pinned, hovered, expanded, mobileOpen, setPinned, togglePinned]
   )
 
   return (
@@ -88,36 +102,126 @@ function Sidebar({
   const state = expanded ? "expanded" : "collapsed"
 
   return (
-    <div
-      data-slot="sidebar-wrapper"
-      className="shrink-0 transition-[width] duration-200 ease-linear"
-      style={{ width: pinned ? expandedWidth : collapsedWidth }}
-    >
-      <aside
-        role="navigation"
-        aria-label="Main navigation"
-        data-slot="sidebar"
-        data-state={state}
-        data-pinned={pinned ? "" : undefined}
-        className={cn(
-          "group/sidebar flex h-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear",
-          pinned ? "relative" : "absolute inset-y-0 left-0 z-10",
-          className
-        )}
-        style={{ width: expanded ? expandedWidth : collapsedWidth }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onFocusCapture={() => setHovered(true)}
-        onBlurCapture={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-            setHovered(false)
-          }
-        }}
-        {...props}
+    <>
+      {/* Desktop sidebar */}
+      <div
+        data-slot="sidebar-wrapper"
+        className="hidden shrink-0 transition-[width] duration-200 ease-linear md:block"
+        style={{ width: pinned ? expandedWidth : collapsedWidth }}
       >
+        <aside
+          role="navigation"
+          aria-label="Main navigation"
+          data-slot="sidebar"
+          data-state={state}
+          data-pinned={pinned ? "" : undefined}
+          className={cn(
+            "group/sidebar hidden h-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear md:flex",
+            pinned ? "relative" : "absolute inset-y-0 left-0 z-10",
+            className
+          )}
+          style={{ width: expanded ? expandedWidth : collapsedWidth }}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          onFocusCapture={() => setHovered(true)}
+          onBlurCapture={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+              setHovered(false)
+            }
+          }}
+          {...props}
+        >
+          {children}
+        </aside>
+      </div>
+
+      {/* Mobile drawer */}
+      <SidebarMobile expandedWidth={expandedWidth}>
         {children}
-      </aside>
-    </div>
+      </SidebarMobile>
+    </>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// SidebarMobile (drawer bottom-slide)
+// ---------------------------------------------------------------------------
+
+function SidebarMobile({
+  expandedWidth,
+  children,
+}: {
+  expandedWidth: number
+  children: React.ReactNode
+}) {
+  const { mobileOpen, setMobileOpen } = useSidebar()
+
+  return (
+    <Dialog.Root open={mobileOpen} onOpenChange={setMobileOpen}>
+      <Dialog.Portal>
+        <Dialog.Backdrop
+          className={cn(
+            "fixed inset-0 z-50 bg-black/60",
+            "data-[open]:animate-in data-[open]:fade-in-0",
+            "data-[closed]:animate-out data-[closed]:fade-out-0"
+          )}
+        />
+        <Dialog.Popup
+          className={cn(
+            "fixed inset-x-0 bottom-0 z-50 max-h-[85vh] rounded-t-2xl bg-sidebar text-sidebar-foreground shadow-lg",
+            "data-[open]:animate-in data-[open]:slide-in-from-bottom",
+            "data-[closed]:animate-out data-[closed]:slide-out-to-bottom"
+          )}
+        >
+          <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-sidebar-foreground/20" />
+          <Dialog.Close
+            className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            aria-label="Close menu"
+          >
+            <HugeiconsIcon icon={Cancel01Icon} className="size-5" />
+          </Dialog.Close>
+          <aside
+            role="navigation"
+            aria-label="Main navigation"
+            data-slot="sidebar"
+            data-state="expanded"
+            className="group/sidebar flex flex-col overflow-y-auto px-2 pb-6 pt-4"
+            style={{ maxWidth: expandedWidth * 2 }}
+          >
+            {children}
+          </aside>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// SidebarTrigger (mobile hamburger)
+// ---------------------------------------------------------------------------
+
+function SidebarTrigger({
+  className,
+  ...props
+}: React.ComponentProps<"button">) {
+  const { setMobileOpen } = useSidebar()
+
+  return (
+    <button
+      type="button"
+      data-slot="sidebar-trigger"
+      className={cn(
+        "flex size-9 items-center justify-center rounded-md text-foreground outline-none transition-colors md:hidden",
+        "hover:bg-foreground/[0.08]",
+        "focus-visible:ring-2 focus-visible:ring-ring",
+        className
+      )}
+      onClick={() => setMobileOpen(true)}
+      aria-label="Open menu"
+      {...props}
+    >
+      <HugeiconsIcon icon={Menu01Icon} className="size-5" />
+    </button>
   )
 }
 
@@ -228,7 +332,7 @@ function SidebarItem({
   href?: string
   children: React.ReactNode
 }) {
-  const { expanded } = useSidebar()
+  const { expanded, setMobileOpen } = useSidebar()
 
   const Comp = href ? "a" : "button"
 
@@ -244,6 +348,7 @@ function SidebarItem({
           "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
           className
         )}
+        onClick={() => setMobileOpen(false)}
       >
         <span className="flex size-5 shrink-0 items-center justify-center">
           <HugeiconsIcon icon={icon} className="size-4" />
@@ -381,4 +486,5 @@ export {
   SidebarPinToggle,
   SidebarProvider,
   SidebarSeparator,
+  SidebarTrigger,
 }

@@ -15,9 +15,11 @@ interface SidebarContextValue {
   pinned: boolean
   hovered: boolean
   expanded: boolean
+  mobileOpen: boolean
   setPinned: (pinned: boolean) => void
   togglePinned: () => void
   setHovered: (hovered: boolean) => void
+  setMobileOpen: (open: boolean) => void
 }
 
 const SidebarContext = createContext<SidebarContextValue | null>(null)

@@ -20,6 +20,7 @@ import {
   SidebarPinToggle,
   SidebarProvider,
   SidebarSeparator,
+  SidebarTrigger,
 } from "@/components/sidebar"
 
 const activeItemClass = "data-[active]:bg-primary/10 data-[active]:text-primary data-[active]:font-semibold"
@@ -59,7 +60,12 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
           <SidebarPinToggle />
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset>
+        <header className="flex items-center px-4 py-3 md:hidden">
+          <SidebarTrigger />
+        </header>
+        {children}
+      </SidebarInset>
     </SidebarProvider>
   )
 }
