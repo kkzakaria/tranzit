@@ -78,7 +78,7 @@ function SidebarProvider({
 
   const value = useMemo<SidebarContextValue>(
     () => ({ pinned, hovered, expanded, mobileOpen, mobileMode, setPinned, togglePinned, setHovered, setMobileOpen }),
-    [pinned, hovered, expanded, mobileOpen, mobileMode, setPinned, togglePinned]
+    [pinned, hovered, expanded, mobileOpen, mobileMode, setPinned, togglePinned, setHovered, setMobileOpen]
   )
 
   return (
