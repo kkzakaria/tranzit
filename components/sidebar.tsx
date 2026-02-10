@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Dialog } from "@base-ui/react/dialog"
 import { Tooltip } from "@base-ui/react/tooltip"
 import { Cancel01Icon, Menu01Icon, Pin02Icon, PinOffIcon } from "@hugeicons/core-free-icons"
@@ -176,6 +176,50 @@ function SidebarMobile({
   const { mobileOpen, setMobileOpen, mobileMode } = useSidebar()
   const config = mobileModeConfig[mobileMode]
 
+  // Swipe-to-close refs (drawer mode only)
+  const popupRef = useRef<HTMLDivElement>(null)
+  const touchStartY = useRef(0)
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY
+    if (popupRef.current) {
+      popupRef.current.style.transition = "none"
+    }
+  }, [])
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const deltaY = e.touches[0].clientY - touchStartY.current
+    if (deltaY > 0 && popupRef.current) {
+      popupRef.current.style.transform = `translateY(${deltaY}px)`
+    }
+  }, [])
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const deltaY = e.changedTouches[0].clientY - touchStartY.current
+      if (!popupRef.current) return
+
+      popupRef.current.style.transition = "transform 200ms"
+
+      if (deltaY > 80) {
+        popupRef.current.style.transform = "translateY(100%)"
+        setTimeout(() => setMobileOpen(false), 200)
+      } else {
+        popupRef.current.style.transform = "translateY(0)"
+      }
+    },
+    [setMobileOpen]
+  )
+
+  const drawerTouchHandlers =
+    mobileMode === "drawer"
+      ? {
+          onTouchStart: handleTouchStart,
+          onTouchMove: handleTouchMove,
+          onTouchEnd: handleTouchEnd,
+        }
+      : {}
+
   return (
     <Dialog.Root open={mobileOpen} onOpenChange={setMobileOpen}>
       <Dialog.Portal>
@@ -187,6 +231,8 @@ function SidebarMobile({
           )}
         />
         <Dialog.Popup
+          ref={popupRef}
+          {...drawerTouchHandlers}
           className={cn(
             "z-50 bg-sidebar text-sidebar-foreground shadow-lg",
             config.position,

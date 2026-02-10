@@ -258,6 +258,7 @@ La barre de drag (trait horizontal) n'est affichée qu'en mode `drawer`. Le bout
 - Clic sur le hamburger → panneau mobile avec backdrop
 - Clic sur un item → panneau se ferme automatiquement
 - Clic sur le backdrop, bouton close ou Escape → panneau se ferme
+- Swipe vers le bas → ferme le drawer (mode `drawer` uniquement, seuil : 80px)
 - Animations via `tw-animate-css` et data attributes de `@base-ui/react Dialog`
 
 ### Composants
