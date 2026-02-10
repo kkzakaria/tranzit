@@ -9,6 +9,8 @@ import { Tooltip } from "@base-ui/react/tooltip"
 import { Cancel01Icon, Menu01Icon, Pin02Icon, PinOffIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 
+import Link from "next/link"
+
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -115,7 +117,7 @@ function Sidebar({
       {/* Desktop sidebar */}
       <div
         data-slot="sidebar-wrapper"
-        className="hidden shrink-0 transition-[width] duration-200 ease-linear md:block"
+        className="hidden shrink-0 transition-[width] duration-200 ease-linear motion-reduce:transition-none md:block"
         style={{ width: pinned ? expandedWidth : collapsedWidth }}
       >
         <aside
@@ -125,7 +127,7 @@ function Sidebar({
           data-state={state}
           data-pinned={pinned ? "" : undefined}
           className={cn(
-            "group/sidebar hidden h-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear md:flex",
+            "group/sidebar hidden h-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear motion-reduce:transition-none md:flex",
             pinned ? "relative" : "absolute inset-y-0 left-0 z-10",
             className
           )}
@@ -160,7 +162,7 @@ const mobileModeConfig = {
   drawer: {
     position: "fixed inset-x-0 bottom-0",
     animation: "data-[open]:slide-in-from-bottom data-[closed]:slide-out-to-bottom",
-    sizing: "max-h-[85vh] w-full rounded-t-2xl",
+    sizing: "max-h-[85vh] w-full rounded-t-2xl pb-[env(safe-area-inset-bottom)]",
   },
   "sheet-left": {
     position: "fixed inset-y-0 left-0",
@@ -220,7 +222,8 @@ function SidebarMobile({
       const deltaX = e.changedTouches[0].clientX - touchStartX.current
       const deltaY = e.changedTouches[0].clientY - touchStartY.current
 
-      popupRef.current.style.transition = "transform 200ms"
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      popupRef.current.style.transition = prefersReducedMotion ? "none" : "transform 200ms"
 
       const shouldClose =
         (mobileMode === "drawer" && deltaY > 80) ||
@@ -251,7 +254,8 @@ function SidebarMobile({
           className={cn(
             "fixed inset-0 z-50 bg-black/60",
             "data-[open]:animate-in data-[open]:fade-in-0",
-            "data-[closed]:animate-out data-[closed]:fade-out-0"
+            "data-[closed]:animate-out data-[closed]:fade-out-0",
+            "motion-reduce:animate-none"
           )}
         />
         <Dialog.Popup
@@ -260,12 +264,13 @@ function SidebarMobile({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           className={cn(
-            "z-50 bg-sidebar text-sidebar-foreground shadow-lg",
+            "z-50 bg-sidebar text-sidebar-foreground shadow-lg overscroll-contain",
             config.position,
             config.sizing,
             "data-[open]:animate-in",
             "data-[closed]:animate-out",
-            config.animation
+            config.animation,
+            "motion-reduce:animate-none"
           )}
         >
           {mobileMode === "drawer" && (
@@ -437,7 +442,7 @@ function SidebarItem({
 }) {
   const { expanded, setMobileOpen } = useSidebar()
 
-  const Comp = href ? "a" : "button"
+  const Comp = href ? Link : "button"
 
   const inner = (
     <li data-slot="sidebar-item" className={cn("list-none")} {...props}>
