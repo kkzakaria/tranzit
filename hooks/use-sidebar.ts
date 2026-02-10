@@ -11,11 +11,14 @@ import {
 
 const SIDEBAR_PINNED_KEY = "sidebar-pinned"
 
+type MobileMode = "drawer" | "sheet-left" | "sheet-right"
+
 interface SidebarContextValue {
   pinned: boolean
   hovered: boolean
   expanded: boolean
   mobileOpen: boolean
+  mobileMode: MobileMode
   setPinned: (pinned: boolean) => void
   togglePinned: () => void
   setHovered: (hovered: boolean) => void
@@ -33,4 +36,4 @@ function useSidebar() {
 }
 
 export { SidebarContext, SIDEBAR_PINNED_KEY, useSidebar }
-export type { SidebarContextValue }
+export type { MobileMode, SidebarContextValue }

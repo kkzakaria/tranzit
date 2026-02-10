@@ -49,6 +49,7 @@ Le composant dépend de :
 | Prop | Type | Défaut | Description |
 |---|---|---|---|
 | `defaultPinned` | `boolean` | `false` | État initial de l'épinglage. |
+| `mobileMode` | `"drawer" \| "sheet-left" \| "sheet-right"` | `"drawer"` | Mode d'affichage mobile. |
 
 ### Sidebar
 
@@ -82,6 +83,7 @@ const { pinned, hovered, expanded, mobileOpen, setPinned, togglePinned, setHover
 | `hovered` | `boolean` | Sidebar survolée ou non. |
 | `expanded` | `boolean` | Dérivé : `pinned \|\| hovered`. |
 | `mobileOpen` | `boolean` | Drawer mobile ouvert ou non. |
+| `mobileMode` | `MobileMode` | Mode mobile actuel (`"drawer"`, `"sheet-left"`, `"sheet-right"`). |
 | `setPinned` | `(v: boolean) => void` | Définit l'état pinned. |
 | `togglePinned` | `() => void` | Bascule l'état pinned. |
 | `setHovered` | `(v: boolean) => void` | Définit l'état hovered. |
@@ -235,17 +237,27 @@ function MyComponent() {
 
 ---
 
-## Mode mobile (drawer)
+## Mode mobile
 
-En dessous de `md` (768px), la sidebar desktop est automatiquement masquée et remplacée par un drawer bottom-slide.
+En dessous de `md` (768px), la sidebar desktop est automatiquement masquée et remplacée par un panneau mobile. Le mode est configurable via la prop `mobileMode` sur `SidebarProvider`.
+
+### Modes disponibles
+
+| Mode | Description | Animation | Sizing |
+|---|---|---|---|
+| `drawer` (défaut) | Slide depuis le bas | `slide-in-from-bottom` / `slide-out-to-bottom` | `max-h-[85vh] w-full rounded-t-2xl` |
+| `sheet-left` | Slide depuis la gauche | `slide-in-from-left` / `slide-out-to-left` | `h-full w-[280px] max-w-[85vw]` |
+| `sheet-right` | Slide depuis la droite | `slide-in-from-right` / `slide-out-to-right` | `h-full w-[280px] max-w-[85vw]` |
+
+La barre de drag (trait horizontal) n'est affichée qu'en mode `drawer`. Le bouton close est toujours présent.
 
 ### Comportement
 
 - **≥ 768px** : sidebar desktop classique (collapsed / hover / pinned)
 - **< 768px** : sidebar masquée, bouton hamburger visible dans le contenu
-- Clic sur le hamburger → drawer slide-up avec backdrop
-- Clic sur un item → drawer se ferme automatiquement
-- Clic sur le backdrop ou bouton close → drawer se ferme
+- Clic sur le hamburger → panneau mobile avec backdrop
+- Clic sur un item → panneau se ferme automatiquement
+- Clic sur le backdrop, bouton close ou Escape → panneau se ferme
 - Animations via `tw-animate-css` et data attributes de `@base-ui/react Dialog`
 
 ### Composants
@@ -253,7 +265,7 @@ En dessous de `md` (768px), la sidebar desktop est automatiquement masquée et r
 | Composant | Description |
 |---|---|
 | `SidebarTrigger` | Bouton hamburger (`md:hidden`). Appelle `setMobileOpen(true)` au clic. |
-| `SidebarMobile` | Drawer interne (rendu automatiquement par `Sidebar`). Utilise `Dialog` de `@base-ui/react`. |
+| `SidebarMobile` | Panneau mobile interne (rendu automatiquement par `Sidebar`). Utilise `Dialog` de `@base-ui/react`. |
 
 ### Utilisation
 
@@ -266,7 +278,7 @@ import {
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider>
+    <SidebarProvider mobileMode="sheet-left">
       <Sidebar>
         <SidebarContent>{/* ... */}</SidebarContent>
       </Sidebar>
@@ -281,7 +293,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 }
 ```
 
-### Ouvrir le drawer depuis n'importe quel composant
+### Ouvrir le panneau mobile depuis n'importe quel composant
 
 ```tsx
 import { useSidebar } from "@/hooks/use-sidebar"

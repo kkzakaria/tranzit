@@ -16,7 +16,7 @@ import {
   SIDEBAR_PINNED_KEY,
   useSidebar,
 } from "@/hooks/use-sidebar"
-import type { SidebarContextValue } from "@/hooks/use-sidebar"
+import type { MobileMode, SidebarContextValue } from "@/hooks/use-sidebar"
 
 // ---------------------------------------------------------------------------
 // SidebarProvider
@@ -24,10 +24,11 @@ import type { SidebarContextValue } from "@/hooks/use-sidebar"
 
 function SidebarProvider({
   defaultPinned = false,
+  mobileMode = "drawer",
   children,
   className,
   ...props
-}: React.ComponentProps<"div"> & { defaultPinned?: boolean }) {
+}: React.ComponentProps<"div"> & { defaultPinned?: boolean; mobileMode?: MobileMode }) {
   const [pinned, setPinnedState] = useState(defaultPinned)
   const [hovered, setHovered] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -66,8 +67,8 @@ function SidebarProvider({
   const expanded = pinned || hovered
 
   const value = useMemo<SidebarContextValue>(
-    () => ({ pinned, hovered, expanded, mobileOpen, setPinned, togglePinned, setHovered, setMobileOpen }),
-    [pinned, hovered, expanded, mobileOpen, setPinned, togglePinned]
+    () => ({ pinned, hovered, expanded, mobileOpen, mobileMode, setPinned, togglePinned, setHovered, setMobileOpen }),
+    [pinned, hovered, expanded, mobileOpen, mobileMode, setPinned, togglePinned]
   )
 
   return (
@@ -144,8 +145,26 @@ function Sidebar({
 }
 
 // ---------------------------------------------------------------------------
-// SidebarMobile (drawer bottom-slide)
+// SidebarMobile
 // ---------------------------------------------------------------------------
+
+const mobileModeConfig = {
+  drawer: {
+    position: "fixed inset-x-0 bottom-0",
+    animation: "data-[open]:slide-in-from-bottom data-[closed]:slide-out-to-bottom",
+    sizing: "max-h-[85vh] w-full rounded-t-2xl",
+  },
+  "sheet-left": {
+    position: "fixed inset-y-0 left-0",
+    animation: "data-[open]:slide-in-from-left data-[closed]:slide-out-to-left",
+    sizing: "h-full w-[280px] max-w-[85vw]",
+  },
+  "sheet-right": {
+    position: "fixed inset-y-0 right-0",
+    animation: "data-[open]:slide-in-from-right data-[closed]:slide-out-to-right",
+    sizing: "h-full w-[280px] max-w-[85vw]",
+  },
+} as const
 
 function SidebarMobile({
   expandedWidth,
@@ -154,7 +173,8 @@ function SidebarMobile({
   expandedWidth: number
   children: React.ReactNode
 }) {
-  const { mobileOpen, setMobileOpen } = useSidebar()
+  const { mobileOpen, setMobileOpen, mobileMode } = useSidebar()
+  const config = mobileModeConfig[mobileMode]
 
   return (
     <Dialog.Root open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -168,14 +188,22 @@ function SidebarMobile({
         />
         <Dialog.Popup
           className={cn(
-            "fixed inset-x-0 bottom-0 z-50 max-h-[85vh] rounded-t-2xl bg-sidebar text-sidebar-foreground shadow-lg",
-            "data-[open]:animate-in data-[open]:slide-in-from-bottom",
-            "data-[closed]:animate-out data-[closed]:slide-out-to-bottom"
+            "z-50 bg-sidebar text-sidebar-foreground shadow-lg",
+            config.position,
+            config.sizing,
+            "data-[open]:animate-in",
+            "data-[closed]:animate-out",
+            config.animation
           )}
         >
-          <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-sidebar-foreground/20" />
+          {mobileMode === "drawer" && (
+            <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-sidebar-foreground/20" />
+          )}
           <Dialog.Close
-            className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            className={cn(
+              "absolute top-3 flex size-8 items-center justify-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+              mobileMode === "sheet-right" ? "left-3" : "right-3"
+            )}
             aria-label="Close menu"
           >
             <HugeiconsIcon icon={Cancel01Icon} className="size-5" />
@@ -185,8 +213,11 @@ function SidebarMobile({
             aria-label="Main navigation"
             data-slot="sidebar"
             data-state="expanded"
-            className="group/sidebar flex flex-col overflow-y-auto px-2 pb-6 pt-4"
-            style={{ maxWidth: expandedWidth * 2 }}
+            className={cn(
+              "group/sidebar flex flex-col overflow-y-auto px-2 pb-6",
+              mobileMode === "drawer" ? "pt-4" : "pt-12"
+            )}
+            style={{ maxWidth: mobileMode === "drawer" ? expandedWidth * 2 : undefined }}
           >
             {children}
           </aside>
