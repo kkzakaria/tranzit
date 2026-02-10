@@ -545,7 +545,7 @@ function SidebarPinToggle({
       onClick={togglePinned}
       aria-label={pinned ? "Unpin sidebar" : "Pin sidebar"}
       className={cn(
-        "flex size-7 items-center justify-center rounded-md text-sidebar-foreground/70 outline-none transition-colors",
+        "hidden size-7 items-center justify-center rounded-md text-sidebar-foreground/70 outline-none transition-colors md:flex",
         "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
         className
