@@ -45,21 +45,29 @@ function SidebarProvider({
 
   // Hydrate from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(SIDEBAR_PINNED_KEY)
-    if (stored !== null) {
-      setPinnedState(stored === "true")
+    try {
+      const stored = localStorage.getItem(SIDEBAR_PINNED_KEY)
+      if (stored !== null) {
+        setPinnedState(stored === "true")
+      }
+    } catch {
+      // localStorage unavailable (incognito, disabled, quota exceeded)
     }
   }, [])
 
   const setPinned = useCallback((value: boolean) => {
     setPinnedState(value)
-    localStorage.setItem(SIDEBAR_PINNED_KEY, String(value))
+    try {
+      localStorage.setItem(SIDEBAR_PINNED_KEY, String(value))
+    } catch {}
   }, [])
 
   const togglePinned = useCallback(() => {
     setPinnedState((prev) => {
       const next = !prev
-      localStorage.setItem(SIDEBAR_PINNED_KEY, String(next))
+      try {
+        localStorage.setItem(SIDEBAR_PINNED_KEY, String(next))
+      } catch {}
       return next
     })
   }, [])
