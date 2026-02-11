@@ -50,6 +50,7 @@ function SidebarProvider({
     try {
       const stored = localStorage.getItem(SIDEBAR_PINNED_KEY)
       if (stored !== null) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPinnedState(stored === "true")
       }
     } catch {
@@ -562,7 +563,7 @@ function SidebarPinToggle({
   className,
   ...props
 }: React.ComponentProps<"button">) {
-  const { pinned, togglePinned, expanded } = useSidebar()
+  const { pinned, togglePinned } = useSidebar()
 
   return (
     <button
