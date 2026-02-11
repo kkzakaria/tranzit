@@ -82,12 +82,19 @@ function DetailPanel({ item }: { item: Item | null }) {
       </div>
       <div className="flex-1 overflow-y-auto p-4">
         {item ? (
-          <>
+          <div className="space-y-4">
             <p>{item.description}</p>
-            <p className="mt-4 text-muted-foreground">
-              Item ID: {item.id}
-            </p>
-          </>
+            <p className="text-muted-foreground">Item ID: {item.id}</p>
+            {Array.from({ length: 30 }, (_, i) => (
+              <p key={i}>
+                Paragraph {i + 1} — Lorem ipsum dolor sit amet, consectetur
+                adipiscing elit. Sed do eiusmod tempor incididunt ut labore et
+                dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+                exercitation ullamco laboris nisi ut aliquip ex ea commodo
+                consequat.
+              </p>
+            ))}
+          </div>
         ) : (
           <p className="text-muted-foreground">
             Select an item from the list to view details.
