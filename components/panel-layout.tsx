@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
 
 import { cn } from "@/lib/utils"
 import {
@@ -205,6 +205,7 @@ function PanelResizer({
   ...props
 }: React.ComponentProps<"div">) {
   const { setLeftWidth, isResizing, setIsResizing } = usePanelLayout()
+  const widthRef = useRef(0)
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -214,19 +215,24 @@ function PanelResizer({
       const layout = (e.currentTarget as HTMLElement).closest<HTMLElement>(
         '[data-slot="panel-layout"]'
       )
+      const panelLeft = layout?.querySelector<HTMLElement>(
+        '[data-slot="panel-left"]'
+      )
 
       document.body.style.userSelect = "none"
       document.body.style.cursor = "col-resize"
 
       const onPointerMove = (ev: PointerEvent) => {
-        if (!layout) return
+        if (!layout || !panelLeft) return
         const containerLeft = layout.getBoundingClientRect().left
-        const newWidth = ev.clientX - containerLeft
-        setLeftWidth(newWidth)
+        const clamped = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, ev.clientX - containerLeft))
+        widthRef.current = clamped
+        panelLeft.style.width = `${clamped}px`
       }
 
       const onPointerUp = () => {
         setIsResizing(false)
+        if (widthRef.current) setLeftWidth(widthRef.current)
         document.body.style.userSelect = ""
         document.body.style.cursor = ""
         document.removeEventListener("pointermove", onPointerMove)
