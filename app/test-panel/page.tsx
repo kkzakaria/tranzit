@@ -104,7 +104,7 @@ export default function TestPanelPage() {
   return (
     <div className="h-full">
       <PanelLayout>
-        <PanelLeft className="border-r">
+        <PanelLeft>
           <ListPanel selectedId={selected?.id ?? null} onSelect={setSelected} />
         </PanelLeft>
         <PanelResizer />
