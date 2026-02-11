@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 
 import { usePanelLayout } from "@/hooks/use-panel-layout"
 import {
@@ -71,9 +73,10 @@ function DetailPanel({ item }: { item: Item | null }) {
           <button
             type="button"
             onClick={showList}
-            className="rounded-md px-2 py-1 text-sm transition-colors hover:bg-muted"
+            className="flex size-8 items-center justify-center rounded-md transition-colors hover:bg-muted"
+            aria-label="Retour"
           >
-            &larr; Back
+            <HugeiconsIcon icon={ArrowLeft01Icon} className="size-5" />
           </button>
         )}
         <h2 className="text-lg font-semibold">
