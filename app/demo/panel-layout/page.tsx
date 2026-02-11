@@ -4,6 +4,7 @@ import { useState } from "react"
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
+import { cn } from "@/lib/utils"
 import { usePanelLayout } from "@/hooks/use-panel-layout"
 import {
   PanelLayout,
@@ -50,9 +51,10 @@ function ListPanel({
               onSelect(item)
               showDetail()
             }}
-            className={`w-full border-b px-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${
-              selectedId === item.id ? "bg-primary/10" : ""
-            }`}
+            className={cn(
+              "w-full border-b px-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+              selectedId === item.id && "bg-primary/10"
+            )}
           >
             <div className="font-medium">{item.title}</div>
             <div className="text-sm text-muted-foreground">{item.description}</div>
@@ -108,7 +110,7 @@ function DetailPanel({ item }: { item: Item | null }) {
   )
 }
 
-export default function TestPanelPage() {
+export default function PanelLayoutDemoPage() {
   const [selected, setSelected] = useState<Item | null>(null)
 
   return (

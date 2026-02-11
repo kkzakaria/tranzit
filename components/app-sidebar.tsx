@@ -45,7 +45,7 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
               <SidebarItem href="/projects" icon={Folder01Icon} active={pathname === "/projects"} className={activeItemClass}>
                 Projects
               </SidebarItem>
-              <SidebarItem href="/test-panel" icon={LayoutTwoColumnIcon} active={pathname === "/test-panel"} className={activeItemClass}>
+              <SidebarItem href="/demo/panel-layout" icon={LayoutTwoColumnIcon} active={pathname === "/demo/panel-layout"} className={activeItemClass}>
                 Panel Layout
               </SidebarItem>
             </SidebarGroupContent>

@@ -39,7 +39,6 @@ function getIsMobileServerSnapshot() {
 // ---------------------------------------------------------------------------
 
 function readStoredWidth(storageKey: string, fallback: number): number {
-  if (typeof window === "undefined") return fallback
   try {
     const stored = localStorage.getItem(storageKey)
     if (stored !== null) {
@@ -109,7 +108,7 @@ function PanelLayout({
       showList,
       isMobile,
     }),
-    [leftWidth, setLeftWidth, isResizing, activePanel, showDetail, showList, isMobile]
+    [leftWidth, setLeftWidth, isResizing, setIsResizing, activePanel, showDetail, showList, isMobile]
   )
 
   return (
@@ -206,6 +205,12 @@ function PanelResizer({
 }: React.ComponentProps<"div">) {
   const { leftWidth, setLeftWidth, isResizing, setIsResizing } = usePanelLayout()
   const widthRef = useRef(0)
+  const cleanupRef = useRef<(() => void) | null>(null)
+
+  // Clean up drag listeners and body styles if the component unmounts mid-drag
+  useEffect(() => {
+    return () => cleanupRef.current?.()
+  }, [])
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -230,15 +235,19 @@ function PanelResizer({
         panelLeft.style.width = `${clamped}px`
       }
 
-      const onPointerUp = () => {
+      const cleanup = () => {
         setIsResizing(false)
         if (widthRef.current) setLeftWidth(widthRef.current)
         document.body.style.userSelect = ""
         document.body.style.cursor = ""
         document.removeEventListener("pointermove", onPointerMove)
         document.removeEventListener("pointerup", onPointerUp)
+        cleanupRef.current = null
       }
 
+      const onPointerUp = () => cleanup()
+
+      cleanupRef.current = cleanup
       document.addEventListener("pointermove", onPointerMove)
       document.addEventListener("pointerup", onPointerUp)
     },
@@ -265,7 +274,7 @@ function PanelResizer({
       data-resizing={isResizing ? "" : undefined}
       role="separator"
       aria-orientation="vertical"
-      aria-label="Resize panels"
+      aria-label="Redimensionner les panneaux"
       aria-valuenow={leftWidth}
       aria-valuemin={MIN_WIDTH}
       aria-valuemax={MAX_WIDTH}
