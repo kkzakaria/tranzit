@@ -11,6 +11,7 @@
 - `bun run dev` — dev server (Turbopack, usually port 3000)
 - `bun run build` — production build (always verify before committing)
 - `bun run lint` — ESLint
+- `npx tsc --noEmit` — type check (no emit)
 
 ## Conventions
 - User communicates in French
@@ -20,6 +21,12 @@
 - Mobile: use `overscroll-behavior: contain` on modals, `env(safe-area-inset-bottom)` on bottom drawers
 - Use `next/link` Link component (not `<a>`) for internal navigation
 - `optimizePackageImports` configured in next.config.ts for @hugeicons barrel imports
+
+## Component Patterns
+- Compound components: Context provider + sub-components with `data-slot` attributes (see `sidebar.tsx`, `panel-layout.tsx`)
+- Each compound component has a companion `.md` doc file and a dedicated hook in `hooks/`
+- localStorage hydration: use `useState(default)` + `useEffect` post-mount — NOT lazy initializer (causes hydration mismatch)
+- Media queries: use `useSyncExternalStore` with `matchMedia` (avoids `set-state-in-effect` lint error)
 
 ## GitHub
 - Repo: kkzakaria/tranzit
