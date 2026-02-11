@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation"
 import {
   Home01Icon,
   Folder01Icon,
+  LayoutTwoColumnIcon,
   Settings01Icon,
   DashboardSquare01Icon,
   UserIcon,
@@ -43,6 +44,9 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
               </SidebarItem>
               <SidebarItem href="/projects" icon={Folder01Icon} active={pathname === "/projects"} className={activeItemClass}>
                 Projects
+              </SidebarItem>
+              <SidebarItem href="/test-panel" icon={LayoutTwoColumnIcon} active={pathname === "/test-panel"} className={activeItemClass}>
+                Panel Layout
               </SidebarItem>
             </SidebarGroupContent>
           </SidebarGroup>
