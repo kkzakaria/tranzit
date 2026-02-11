@@ -1,3 +1,5 @@
+// Documentation & usage examples: ./panel-layout.md
+
 "use client"
 
 import * as React from "react"
