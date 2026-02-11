@@ -204,7 +204,7 @@ function PanelResizer({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const { setLeftWidth, isResizing, setIsResizing } = usePanelLayout()
+  const { leftWidth, setLeftWidth, isResizing, setIsResizing } = usePanelLayout()
   const widthRef = useRef(0)
 
   const handlePointerDown = useCallback(
@@ -245,24 +245,46 @@ function PanelResizer({
     [setLeftWidth, setIsResizing]
   )
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const step = e.shiftKey ? 50 : 10
+      if (e.key === "ArrowLeft") {
+        e.preventDefault()
+        setLeftWidth(leftWidth - step)
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault()
+        setLeftWidth(leftWidth + step)
+      }
+    },
+    [leftWidth, setLeftWidth]
+  )
+
   return (
     <div
       data-slot="panel-resizer"
       data-resizing={isResizing ? "" : undefined}
       role="separator"
       aria-orientation="vertical"
+      aria-label="Resize panels"
+      aria-valuenow={leftWidth}
+      aria-valuemin={MIN_WIDTH}
+      aria-valuemax={MAX_WIDTH}
+      tabIndex={0}
       className={cn(
         "hidden w-1 shrink-0 cursor-col-resize items-center justify-center md:flex",
         "group/resizer relative",
+        "focus-visible:outline-none",
         className
       )}
       onPointerDown={handlePointerDown}
+      onKeyDown={handleKeyDown}
       {...props}
     >
       <div
         className={cn(
-          "h-full w-px bg-border transition-all motion-reduce:transition-none",
+          "h-full w-px bg-border transition-[width,background-color] motion-reduce:transition-none",
           "group-hover/resizer:w-1 group-hover/resizer:bg-border",
+          "group-focus-visible/resizer:w-1 group-focus-visible/resizer:bg-primary",
           "group-data-[resizing]/resizer:w-1 group-data-[resizing]/resizer:bg-primary"
         )}
       />

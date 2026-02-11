@@ -50,7 +50,7 @@ function ListPanel({
               onSelect(item)
               showDetail()
             }}
-            className={`w-full border-b px-4 py-3 text-left transition-colors hover:bg-muted/50 ${
+            className={`w-full border-b px-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${
               selectedId === item.id ? "bg-primary/10" : ""
             }`}
           >
@@ -73,7 +73,7 @@ function DetailPanel({ item }: { item: Item | null }) {
           <button
             type="button"
             onClick={showList}
-            className="flex size-8 items-center justify-center rounded-md transition-colors hover:bg-muted"
+            className="flex size-8 items-center justify-center rounded-md transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Retour"
           >
             <HugeiconsIcon icon={ArrowLeft01Icon} className="size-5" />
