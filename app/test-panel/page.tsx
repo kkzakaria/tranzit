@@ -102,7 +102,7 @@ export default function TestPanelPage() {
   const [selected, setSelected] = useState<Item | null>(null)
 
   return (
-    <div className="h-[calc(100vh-48px)]">
+    <div className="h-full">
       <PanelLayout>
         <PanelLeft className="border-r">
           <ListPanel selectedId={selected?.id ?? null} onSelect={setSelected} />
