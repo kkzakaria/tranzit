@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 import { usePanelLayout } from "@/hooks/use-panel-layout"
 import {
   PanelLayout,
@@ -8,13 +10,25 @@ import {
   PanelRight,
 } from "@/components/panel-layout"
 
-const items = Array.from({ length: 20 }, (_, i) => ({
+interface Item {
+  id: number
+  title: string
+  description: string
+}
+
+const items: Item[] = Array.from({ length: 20 }, (_, i) => ({
   id: i + 1,
   title: `Item ${i + 1}`,
   description: `Description for item ${i + 1} — click to see details.`,
 }))
 
-function ListPanel() {
+function ListPanel({
+  selectedId,
+  onSelect,
+}: {
+  selectedId: number | null
+  onSelect: (item: Item) => void
+}) {
   const { showDetail, activePanel, leftWidth, isMobile } = usePanelLayout()
 
   return (
@@ -30,8 +44,13 @@ function ListPanel() {
           <button
             key={item.id}
             type="button"
-            onClick={showDetail}
-            className="w-full border-b px-4 py-3 text-left transition-colors hover:bg-muted/50"
+            onClick={() => {
+              onSelect(item)
+              showDetail()
+            }}
+            className={`w-full border-b px-4 py-3 text-left transition-colors hover:bg-muted/50 ${
+              selectedId === item.id ? "bg-primary/10" : ""
+            }`}
           >
             <div className="font-medium">{item.title}</div>
             <div className="text-sm text-muted-foreground">{item.description}</div>
@@ -42,7 +61,7 @@ function ListPanel() {
   )
 }
 
-function DetailPanel() {
+function DetailPanel({ item }: { item: Item | null }) {
   const { showList, isMobile } = usePanelLayout()
 
   return (
@@ -57,31 +76,40 @@ function DetailPanel() {
             &larr; Back
           </button>
         )}
-        <h2 className="text-lg font-semibold">Detail</h2>
+        <h2 className="text-lg font-semibold">
+          {item ? item.title : "Detail"}
+        </h2>
       </div>
       <div className="flex-1 overflow-y-auto p-4">
-        <p className="text-muted-foreground">
-          Select an item from the list to view details.
-        </p>
-        <p className="mt-4 text-muted-foreground">
-          On desktop, drag the resizer handle between the two panels to resize.
-          On mobile, use the back button to return to the list.
-        </p>
+        {item ? (
+          <>
+            <p>{item.description}</p>
+            <p className="mt-4 text-muted-foreground">
+              Item ID: {item.id}
+            </p>
+          </>
+        ) : (
+          <p className="text-muted-foreground">
+            Select an item from the list to view details.
+          </p>
+        )}
       </div>
     </div>
   )
 }
 
 export default function TestPanelPage() {
+  const [selected, setSelected] = useState<Item | null>(null)
+
   return (
     <div className="h-[calc(100vh-48px)]">
       <PanelLayout>
         <PanelLeft className="border-r">
-          <ListPanel />
+          <ListPanel selectedId={selected?.id ?? null} onSelect={setSelected} />
         </PanelLeft>
         <PanelResizer />
         <PanelRight>
-          <DetailPanel />
+          <DetailPanel item={selected} />
         </PanelRight>
       </PanelLayout>
     </div>
