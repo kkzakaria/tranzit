@@ -86,7 +86,7 @@ function SidebarProvider({
     <SidebarContext.Provider value={value}>
       <div
         data-slot="sidebar-provider"
-        className={cn("flex h-[calc(100dvh-3rem)] w-full overflow-hidden", className)}
+        className={cn("relative flex h-[calc(100dvh-3rem)] w-full overflow-hidden", className)}
         {...props}
       >
         {children}
