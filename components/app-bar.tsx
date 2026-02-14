@@ -4,7 +4,7 @@ import * as React from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import {
-  SunIcon,
+  Sun02Icon,
   Moon02Icon,
   NotificationIcon,
   UserIcon,
@@ -166,7 +166,7 @@ function ThemeToggle({ className, ...props }: React.ComponentProps<typeof Button
       {...props}
     >
       <HugeiconsIcon
-        icon={theme === "light" ? SunIcon : Moon02Icon}
+        icon={theme === "light" ? Sun02Icon : Moon02Icon}
         strokeWidth={2}
       />
     </Button>
