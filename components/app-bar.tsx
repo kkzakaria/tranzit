@@ -19,6 +19,7 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
@@ -250,13 +251,13 @@ function AppBarAvatar({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={8}>
           {(name || email) && (
-            <>
+            <DropdownMenuGroup>
               <DropdownMenuLabel className="flex flex-col">
                 {name && <span className="text-xs font-medium text-foreground">{name}</span>}
                 {email && <span className="text-[11px] text-muted-foreground">{email}</span>}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-            </>
+            </DropdownMenuGroup>
           )}
           <DropdownMenuItem>
             <HugeiconsIcon icon={UserIcon} strokeWidth={2} />
