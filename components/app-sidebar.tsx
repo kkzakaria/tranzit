@@ -68,9 +68,9 @@ export function AppSidebar({ children }: { children: React.ReactNode }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex items-center px-4 py-3 md:hidden">
+        <div className="flex items-center px-4 py-2 md:hidden">
           <SidebarTrigger />
-        </header>
+        </div>
         {children}
       </SidebarInset>
     </SidebarProvider>

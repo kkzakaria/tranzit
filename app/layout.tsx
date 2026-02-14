@@ -3,6 +3,15 @@ import { Geist, Geist_Mono, Nunito_Sans } from "next/font/google";
 import "./globals.css";
 
 import { AppSidebar } from "@/components/app-sidebar";
+import {
+  ThemeProvider,
+  AppBar,
+  AppBarLogo,
+  AppBarActions,
+  ThemeToggle,
+  NotificationButton,
+  AppBarAvatar,
+} from "@/components/app-bar";
 
 const nunitoSans = Nunito_Sans({ variable: "--font-sans", subsets: ["latin"] });
 
@@ -31,7 +40,19 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AppSidebar>{children}</AppSidebar>
+        <ThemeProvider>
+          <AppBar>
+            <AppBarLogo />
+            <AppBarActions>
+              <ThemeToggle />
+              <NotificationButton count={3} />
+              <AppBarAvatar name="Zakaria K." email="zakaria@tranzit.app" />
+            </AppBarActions>
+          </AppBar>
+          <div className="pt-12">
+            <AppSidebar>{children}</AppSidebar>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );
