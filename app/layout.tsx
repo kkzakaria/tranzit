@@ -4,6 +4,11 @@ import "./globals.css";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/sidebar";
+import {
   ThemeProvider,
   AppBar,
   AppBarLogo,
@@ -41,16 +46,22 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <AppBar>
-            <AppBarLogo />
-            <AppBarActions>
-              <ThemeToggle />
-              <NotificationButton count={3} />
-              <AppBarAvatar name="Zakaria K." email="zakaria@tranzit.app" />
-            </AppBarActions>
-          </AppBar>
           <div className="pt-12">
-            <AppSidebar>{children}</AppSidebar>
+            <SidebarProvider defaultPinned={false}>
+              <AppBar>
+                <div className="flex items-center gap-2">
+                  <SidebarTrigger />
+                  <AppBarLogo />
+                </div>
+                <AppBarActions>
+                  <ThemeToggle />
+                  <NotificationButton count={3} />
+                  <AppBarAvatar name="Zakaria K." email="zakaria@tranzit.app" />
+                </AppBarActions>
+              </AppBar>
+              <AppSidebar />
+              <SidebarInset>{children}</SidebarInset>
+            </SidebarProvider>
           </div>
         </ThemeProvider>
       </body>
