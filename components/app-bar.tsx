@@ -197,7 +197,7 @@ function NotificationButton({
     >
       <HugeiconsIcon icon={NotificationIcon} strokeWidth={2} />
       {count && count > 0 ? (
-        <span className="absolute -right-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium leading-4 text-destructive-foreground">
+        <span className="absolute -right-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium leading-4 text-white">
           {displayCount}
         </span>
       ) : null}
