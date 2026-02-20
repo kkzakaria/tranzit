@@ -9,7 +9,7 @@ import { Tooltip } from "@base-ui/react/tooltip"
 import { Cancel01Icon, Menu01Icon, Pin02Icon, PinOffIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 
-import Link from "next/link"
+import { Link } from "@/lib/navigation"
 
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
@@ -86,7 +86,7 @@ function SidebarProvider({
     <SidebarContext.Provider value={value}>
       <div
         data-slot="sidebar-provider"
-        className={cn("flex h-screen w-full overflow-hidden", className)}
+        className={cn("relative flex h-[calc(100dvh-3rem)] w-full overflow-hidden", className)}
         {...props}
       >
         {children}
@@ -130,7 +130,7 @@ function Sidebar({
             data-pinned={pinned ? "" : undefined}
             className={cn(
               "group/sidebar hidden h-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear motion-reduce:transition-none md:flex",
-              pinned ? "relative" : "absolute inset-y-0 left-0 z-10",
+              pinned ? "relative" : "absolute inset-y-0 start-0 z-10",
               className
             )}
             style={{ width: expanded ? expandedWidth : collapsedWidth }}
@@ -168,12 +168,12 @@ const mobileModeConfig = {
     sizing: "max-h-[85vh] w-full rounded-t-2xl pb-[env(safe-area-inset-bottom)]",
   },
   "sheet-left": {
-    position: "fixed inset-y-0 left-0",
+    position: "fixed top-12 bottom-0 left-0",
     animation: "data-[open]:slide-in-from-left data-[closed]:slide-out-to-left",
     sizing: "h-full w-[280px] max-w-[85vw]",
   },
   "sheet-right": {
-    position: "fixed inset-y-0 right-0",
+    position: "fixed top-12 bottom-0 right-0",
     animation: "data-[open]:slide-in-from-right data-[closed]:slide-out-to-right",
     sizing: "h-full w-[280px] max-w-[85vw]",
   },
