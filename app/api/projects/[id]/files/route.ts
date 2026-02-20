@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import type { FileItem } from "@/hooks/use-file-explorer"
+import type { FileItem } from "@/types/file-explorer"
 
 const MOCK_FILES: FileItem[] = [
   {
@@ -55,9 +55,14 @@ const MOCK_FILES: FileItem[] = [
 ]
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   await params
-  return NextResponse.json({ items: MOCK_FILES })
+  const path = req.nextUrl.searchParams.get("path") ?? "/"
+  const items = MOCK_FILES.filter((f) => {
+    const dir = f.path.substring(0, f.path.lastIndexOf("/")) || "/"
+    return dir === path
+  })
+  return NextResponse.json({ items })
 }

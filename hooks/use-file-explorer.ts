@@ -2,25 +2,8 @@
 
 import * as React from "react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export interface FileItem {
-  id: string
-  name: string
-  type: "file" | "folder"
-  size?: number
-  mimeType?: string
-  modifiedAt: string
-  path: string
-}
-
-export interface Breadcrumb {
-  name: string
-  path: string
-}
+import type { FileItem, Breadcrumb } from "@/types/file-explorer"
+export type { FileItem, Breadcrumb } // re-export for consumers
 
 export interface FileExplorerContextValue {
   projectId: string
@@ -30,6 +13,7 @@ export interface FileExplorerContextValue {
   files: FileItem[]
   isLoading: boolean
   error: string | null
+  mutationError: string | null
   selectedFile: FileItem | null
   selectFile: (file: FileItem | null) => void
   viewMode: "grid" | "list"
@@ -69,6 +53,7 @@ export function useFileExplorerState(
   const [files, setFiles] = useState<FileItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [mutationError, setMutationError] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null)
   const [viewMode, setViewModeState] = useState<"grid" | "list">("grid")
   const [isUploading, setIsUploading] = useState(false)
@@ -90,7 +75,9 @@ export function useFileExplorerState(
     setViewModeState(mode)
     try {
       localStorage.setItem(VIEW_MODE_KEY, mode)
-    } catch {}
+    } catch (e) {
+      console.warn("[FileExplorer] Failed to persist view mode:", e)
+    }
   }, [])
 
   const breadcrumbs = useMemo<Breadcrumb[]>(() => {
@@ -145,6 +132,7 @@ export function useFileExplorerState(
     async (newFiles: File[]) => {
       setIsUploading(true)
       setUploadProgress(0)
+      setMutationError(null)
       try {
         const formData = new FormData()
         newFiles.forEach((f) => formData.append("files", f))
@@ -160,8 +148,12 @@ export function useFileExplorerState(
           `/api/projects/${projectId}/files?path=${encodeURIComponent(currentPathRef.current)}`
         )
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
-        const { items } = (await r.json()) as { items: FileItem[] }
-        setFiles(items)
+        const data = (await r.json()) as { items?: unknown }
+        if (!Array.isArray(data?.items)) throw new Error("Invalid response")
+        setFiles(data.items as FileItem[])
+      } catch (e) {
+        setMutationError(e instanceof Error ? e.message : "Erreur inconnue")
+        throw e // re-throw so callers can handle too
       } finally {
         setIsUploading(false)
         setUploadProgress(0)
@@ -172,41 +164,59 @@ export function useFileExplorerState(
 
   const renameFile = useCallback(
     async (id: string, name: string) => {
-      const res = await fetch(`/api/projects/${projectId}/files/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, name } : f)))
-      setSelectedFile((prev) =>
-        prev?.id === id ? { ...prev, name } : prev
-      )
+      setMutationError(null)
+      try {
+        const res = await fetch(`/api/projects/${projectId}/files/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name }),
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, name } : f)))
+        setSelectedFile((prev) =>
+          prev?.id === id ? { ...prev, name } : prev
+        )
+      } catch (e) {
+        setMutationError(e instanceof Error ? e.message : "Erreur inconnue")
+        throw e
+      }
     },
     [projectId]
   )
 
   const deleteFile = useCallback(
     async (id: string) => {
-      const res = await fetch(`/api/projects/${projectId}/files/${id}`, {
-        method: "DELETE",
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      setFiles((prev) => prev.filter((f) => f.id !== id))
-      setSelectedFile((prev) => (prev?.id === id ? null : prev))
+      setMutationError(null)
+      try {
+        const res = await fetch(`/api/projects/${projectId}/files/${id}`, {
+          method: "DELETE",
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        setFiles((prev) => prev.filter((f) => f.id !== id))
+        setSelectedFile((prev) => (prev?.id === id ? null : prev))
+      } catch (e) {
+        setMutationError(e instanceof Error ? e.message : "Erreur inconnue")
+        throw e
+      }
     },
     [projectId]
   )
 
   const moveFile = useCallback(
     async (id: string, targetPath: string) => {
-      const res = await fetch(`/api/projects/${projectId}/files/${id}/move`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetPath }),
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      setFiles((prev) => prev.filter((f) => f.id !== id))
+      setMutationError(null)
+      try {
+        const res = await fetch(`/api/projects/${projectId}/files/${id}/move`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetPath }),
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        setFiles((prev) => prev.filter((f) => f.id !== id))
+      } catch (e) {
+        setMutationError(e instanceof Error ? e.message : "Erreur inconnue")
+        throw e
+      }
     },
     [projectId]
   )
@@ -220,6 +230,7 @@ export function useFileExplorerState(
       files,
       isLoading,
       error,
+      mutationError,
       selectedFile,
       selectFile,
       viewMode,
@@ -239,6 +250,7 @@ export function useFileExplorerState(
       files,
       isLoading,
       error,
+      mutationError,
       selectedFile,
       selectFile,
       viewMode,

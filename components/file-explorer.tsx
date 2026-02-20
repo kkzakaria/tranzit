@@ -99,7 +99,7 @@ function FileExplorerPreview({
     if (file.mimeType?.startsWith("image/")) {
       return (
         <div className="flex min-h-48 items-center justify-center overflow-hidden rounded-lg bg-muted">
-          {/* Replace with the real preview URL from your backend */}
+          {/* TODO: replace /api/projects/preview with the real backend preview endpoint */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`/api/projects/preview?id=${file.id}`}
@@ -136,7 +136,7 @@ function FileExplorerPreview({
     >
       {content}
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-xs">
-        {file.size !== undefined && (
+        {file.type === "file" && file.size !== undefined && (
           <>
             <dt className="font-medium text-muted-foreground">
               {t("detail.size")}
@@ -144,7 +144,7 @@ function FileExplorerPreview({
             <dd>{formatBytes(file.size)}</dd>
           </>
         )}
-        {file.mimeType ? (
+        {file.type === "file" && file.mimeType ? (
           <>
             <dt className="font-medium text-muted-foreground">
               {t("detail.type")}
@@ -176,7 +176,11 @@ function FileExplorerSheet() {
 
   const handleDelete = useCallback(async () => {
     if (!selectedFile) return
-    await deleteFile(selectedFile.id)
+    try {
+      await deleteFile(selectedFile.id)
+    } catch {
+      // mutationError is set by the hook
+    }
     setDeleteOpen(false)
   }, [selectedFile, deleteFile])
 
@@ -277,6 +281,7 @@ function FileExplorerItem({
   const [renameValue, setRenameValue] = useState(item.name)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const isSubmittingRef = useRef(false)
 
   const Icon = getFileIcon(item)
 
@@ -301,9 +306,18 @@ function FileExplorerItem({
   }, [isRenaming])
 
   const handleRenameCommit = useCallback(async () => {
+    if (isSubmittingRef.current) return
     const trimmed = renameValue.trim()
     if (trimmed && trimmed !== item.name) {
-      await renameFile(item.id, trimmed)
+      isSubmittingRef.current = true
+      try {
+        await renameFile(item.id, trimmed)
+      } catch {
+        // mutationError is set by the hook, keep input open for retry
+        isSubmittingRef.current = false
+        return
+      }
+      isSubmittingRef.current = false
     }
     setIsRenaming(false)
   }, [item.id, item.name, renameValue, renameFile])
@@ -317,7 +331,11 @@ function FileExplorerItem({
   )
 
   const handleDelete = useCallback(async () => {
-    await deleteFile(item.id)
+    try {
+      await deleteFile(item.id)
+    } catch {
+      // mutationError is set by the hook
+    }
     setDeleteOpen(false)
   }, [item.id, deleteFile])
 
@@ -412,7 +430,7 @@ function FileExplorerItem({
             <span className="flex-1 truncate">{item.name}</span>
           )}
 
-          {item.size !== undefined && (
+          {item.type === "file" && item.size !== undefined && (
             <span className="shrink-0 text-muted-foreground">
               {formatBytes(item.size)}
             </span>
@@ -573,7 +591,6 @@ function FileExplorerGrid({
       </p>
     )
   if (error) {
-    console.error(error)
     return (
       <p className="p-8 text-center text-xs text-destructive">
         {t("error")}
@@ -622,7 +639,6 @@ function FileExplorerList({
       </p>
     )
   if (error) {
-    console.error(error)
     return (
       <p className="p-8 text-center text-xs text-destructive">
         {t("error")}
@@ -677,7 +693,13 @@ function FileExplorerDropZone({
       e.preventDefault()
       setIsDragOver(false)
       const files = Array.from(e.dataTransfer.files)
-      if (files.length > 0) await uploadFiles(files)
+      if (files.length > 0) {
+        try {
+          await uploadFiles(files)
+        } catch {
+          // mutationError is set by the hook
+        }
+      }
     },
     [uploadFiles]
   )
@@ -717,6 +739,7 @@ function FileExplorerToolbar({
     setViewMode,
     isUploading,
     uploadFiles,
+    mutationError,
   } = useFileExplorer()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -802,12 +825,19 @@ function FileExplorerToolbar({
           onChange={async (e) => {
             const files = Array.from(e.target.files ?? [])
             if (files.length > 0) {
-              await uploadFiles(files)
+              try {
+                await uploadFiles(files)
+              } catch {
+                // mutationError is set by the hook
+              }
               e.target.value = ""
             }
           }}
         />
       </div>
+      {mutationError && (
+        <p className="px-3 pb-2 text-xs text-destructive">{mutationError}</p>
+      )}
     </div>
   )
 }

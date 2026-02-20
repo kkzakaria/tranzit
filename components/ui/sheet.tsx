@@ -26,7 +26,7 @@ function SheetOverlay({
       data-slot="sheet-overlay"
       className={cn(
         "fixed inset-0 z-50 isolate bg-black/40 supports-backdrop-filter:backdrop-blur-sm",
-        "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 duration-200 motion-reduce:transition-none",
+        "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 duration-200 motion-reduce:transition-none motion-reduce:animate-none",
         className
       )}
       {...props}
@@ -49,7 +49,7 @@ function SheetContent({
           "sm:w-[420px] sm:border-l",
           "data-open:animate-in data-closed:animate-out",
           "data-open:slide-in-from-right data-closed:slide-out-to-right",
-          "duration-300 motion-reduce:transition-none",
+          "duration-300 motion-reduce:transition-none motion-reduce:animate-none",
           "overscroll-contain",
           className
         )}

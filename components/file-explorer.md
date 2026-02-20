@@ -45,11 +45,18 @@ Must be used inside a `<FileExplorer>` tree.
 
 ## State persistence
 
-`viewMode` is persisted to `localStorage` under key `file-explorer:view-mode` (same hydration pattern as `sidebar.tsx`).
+`viewMode` is persisted to `localStorage` under key `file-explorer:v1:view-mode` (same hydration pattern as `sidebar.tsx`).
 
 ## API contract
 
-Files are fetched from: `GET /api/projects/[id]/files?path=...`
-Response: `{ items: FileItem[] }`
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/projects/[id]/files?path=...` | List files at path. Response: `{ items: FileItem[] }` |
+| POST | `/api/projects/[id]/files/upload` | Upload files (multipart: `files`, `path`). Response: `{ ok: true }` |
+| PATCH | `/api/projects/[id]/files/[fileId]` | Rename. Body: `{ name }`. Response: `{ ok: true }` |
+| DELETE | `/api/projects/[id]/files/[fileId]` | Delete file. Response: `{ ok: true }` |
+| POST | `/api/projects/[id]/files/[fileId]/move` | Move. Body: `{ targetPath }`. Response: `{ ok: true }` |
 
-See `hooks/use-file-explorer.ts` for the full `FileItem` type and all API endpoints.
+> **Note:** Image/PDF preview URLs (`/api/projects/preview?id=...`) are placeholder endpoints — replace with your backend's real preview endpoint before production.
+
+See `hooks/use-file-explorer.ts` for the full `FileItem` type.
