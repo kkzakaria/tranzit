@@ -55,7 +55,7 @@ export function LanguageSwitcher() {
           {routing.locales.map((loc) => (
             <DropdownMenuItem
               key={loc}
-              onSelect={() => handleChange(loc)}
+              onClick={() => handleChange(loc)}
               aria-current={loc === locale ? "true" : undefined}
               className={loc === locale ? "font-semibold" : undefined}
             >
