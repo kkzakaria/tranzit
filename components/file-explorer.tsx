@@ -247,4 +247,176 @@ function FileExplorerSheet() {
   )
 }
 
-export {}
+
+// ---------------------------------------------------------------------------
+// FileExplorer.Item
+// ---------------------------------------------------------------------------
+
+function FileExplorerItem({ item }: { item: FileItem }) {
+  const t = useTranslations("file-explorer")
+  const { navigateTo, selectFile, renameFile, deleteFile } = useFileExplorer()
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [renameValue, setRenameValue] = useState(item.name)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const Icon = getFileIcon(item)
+
+  const handleActivate = useCallback(() => {
+    if (item.type === "folder") {
+      navigateTo(item.path)
+    } else {
+      selectFile(item)
+    }
+  }, [item, navigateTo, selectFile])
+
+  const handleRenameStart = useCallback(() => {
+    setRenameValue(item.name)
+    setIsRenaming(true)
+    setTimeout(() => inputRef.current?.select(), 0)
+  }, [item.name])
+
+  const handleRenameCommit = useCallback(async () => {
+    const trimmed = renameValue.trim()
+    if (trimmed && trimmed !== item.name) {
+      await renameFile(item.id, trimmed)
+    }
+    setIsRenaming(false)
+  }, [item.id, item.name, renameValue, renameFile])
+
+  const handleRenameKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") handleRenameCommit()
+      if (e.key === "Escape") setIsRenaming(false)
+    },
+    [handleRenameCommit]
+  )
+
+  const handleDelete = useCallback(async () => {
+    await deleteFile(item.id)
+    setDeleteOpen(false)
+  }, [item.id, deleteFile])
+
+  return (
+    <>
+      <div
+        data-slot="file-explorer-item"
+        role="button"
+        tabIndex={0}
+        aria-label={item.name}
+        className={cn(
+          "group/item relative flex cursor-pointer select-none flex-col items-center gap-2 rounded-lg p-3 text-center",
+          "hover:bg-muted focus-visible:bg-muted focus-visible:outline-none",
+          "transition-colors motion-reduce:transition-none"
+        )}
+        onClick={handleActivate}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            handleActivate()
+          }
+        }}
+        onDoubleClick={(e) => {
+          e.preventDefault()
+          handleRenameStart()
+        }}
+      >
+        <HugeiconsIcon
+          icon={Icon}
+          className={cn(
+            "size-10 shrink-0",
+            item.type === "folder"
+              ? "text-primary"
+              : "text-muted-foreground"
+          )}
+        />
+
+        {isRenaming ? (
+          <input
+            ref={inputRef}
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onBlur={handleRenameCommit}
+            onKeyDown={handleRenameKeyDown}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full rounded border bg-background px-1 text-center text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+            aria-label={t("rename.label")}
+          />
+        ) : (
+          <span className="w-full truncate text-xs leading-tight">
+            {item.name}
+          </span>
+        )}
+
+        {/* Context menu button */}
+        <div
+          className={cn(
+            "absolute right-1 top-1",
+            "opacity-0 transition-opacity motion-reduce:transition-none",
+            "group-hover/item:opacity-100 group-focus-within/item:opacity-100"
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label="Plus d'actions"
+                >
+                  <HugeiconsIcon icon={More03Icon} />
+                </Button>
+              }
+            />
+            <DropdownMenuContent side="bottom" align="end">
+              <DropdownMenuItem onSelect={handleRenameStart}>
+                <HugeiconsIcon icon={Edit01Icon} />
+                {t("actions.rename")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  const a = document.createElement("a")
+                  a.href = `/api/projects/preview?id=${item.id}`
+                  a.download = item.name
+                  a.click()
+                }}
+              >
+                <HugeiconsIcon icon={Download01Icon} />
+                {t("actions.download")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={() => setDeleteOpen(true)}
+              >
+                <HugeiconsIcon icon={Delete02Icon} />
+                {t("actions.delete")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("delete.description")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("delete.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleDelete}
+            >
+              {t("delete.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}
