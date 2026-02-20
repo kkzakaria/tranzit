@@ -8,7 +8,7 @@
 - bun as package manager and runner
 
 ## Commands
-- `bun run dev` — dev server (Turbopack, usually port 3000)
+- `bun run dev` — dev server (Turbopack, port 34000)
 - `bun run build` — production build (always verify before committing)
 - `bun run lint` — ESLint
 - `npx tsc --noEmit` — type check (no emit)
