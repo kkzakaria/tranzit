@@ -13,6 +13,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -154,6 +155,7 @@ function AppBarActions({
 
 function ThemeToggle({ className, ...props }: React.ComponentProps<typeof Button>) {
   const { theme, toggleTheme } = React.useContext(ThemeContext) ?? { theme: "light" as Theme, toggleTheme: () => {} }
+  const t = useTranslations("appbar")
 
   return (
     <Button
@@ -161,7 +163,7 @@ function ThemeToggle({ className, ...props }: React.ComponentProps<typeof Button
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
-      aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+      aria-label={theme === "light" ? t("switchToDark") : t("switchToLight")}
       className={cn("motion-reduce:transition-none", className)}
       {...props}
     >
@@ -183,6 +185,7 @@ function NotificationButton({
   ...props
 }: React.ComponentProps<typeof Button> & { count?: number }) {
   const displayCount = count && count > 99 ? "99+" : count
+  const t = useTranslations("appbar")
 
   return (
     <Button
@@ -190,7 +193,9 @@ function NotificationButton({
       variant="ghost"
       size="icon"
       aria-label={
-        count ? `${count} unread notifications` : "Notifications"
+        count
+          ? t("notificationsCount", { count })
+          : t("notifications")
       }
       className={cn("relative motion-reduce:transition-none", className)}
       {...props}
@@ -220,6 +225,8 @@ function AppBarAvatar({
   name?: string
   email?: string
 }) {
+  const t = useTranslations("appbar")
+  const tc = useTranslations("common")
   const initials = name
     ? name
         .split(" ")
@@ -234,7 +241,7 @@ function AppBarAvatar({
       <DropdownMenu>
         <DropdownMenuTrigger
           className="flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label="User menu"
+          aria-label={t("userMenu")}
         >
           {src ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -261,16 +268,16 @@ function AppBarAvatar({
           )}
           <DropdownMenuItem>
             <HugeiconsIcon icon={UserIcon} strokeWidth={2} />
-            Profile
+            {tc("profile")}
           </DropdownMenuItem>
           <DropdownMenuItem>
             <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} />
-            Settings
+            {tc("settings")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive">
             <HugeiconsIcon icon={LogoutIcon} strokeWidth={2} />
-            Sign out
+            {tc("signOut")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
