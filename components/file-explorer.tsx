@@ -420,3 +420,194 @@ function FileExplorerItem({ item }: { item: FileItem }) {
     </>
   )
 }
+
+// ---------------------------------------------------------------------------
+// Shared: sorted file list
+// ---------------------------------------------------------------------------
+
+function sortedFiles(files: FileItem[]) {
+  return [...files].sort((a, b) => {
+    if (a.type !== b.type) return a.type === "folder" ? -1 : 1
+    return a.name.localeCompare(b.name)
+  })
+}
+
+// ---------------------------------------------------------------------------
+// FileExplorer.Grid
+// ---------------------------------------------------------------------------
+
+function FileExplorerGrid({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  const { files, isLoading, error } = useFileExplorer()
+  const t = useTranslations("file-explorer")
+
+  if (isLoading)
+    return (
+      <p className="p-8 text-center text-xs text-muted-foreground">
+        {t("loading")}
+      </p>
+    )
+  if (error)
+    return (
+      <p className="p-8 text-center text-xs text-destructive">
+        {t("error")}: {error}
+      </p>
+    )
+  if (files.length === 0)
+    return (
+      <p className="p-8 text-center text-xs text-muted-foreground">
+        {t("empty")}
+      </p>
+    )
+
+  return (
+    <div
+      data-slot="file-explorer-grid"
+      className={cn(
+        "grid grid-cols-2 gap-1 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6",
+        className
+      )}
+      {...props}
+    >
+      {sortedFiles(files).map((file) => (
+        <FileExplorerItem key={file.id} item={file} />
+      ))}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// FileExplorer.List
+// ---------------------------------------------------------------------------
+
+function FileExplorerList({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  const { files, isLoading, error, navigateTo, selectFile } =
+    useFileExplorer()
+  const t = useTranslations("file-explorer")
+
+  if (isLoading)
+    return (
+      <p className="p-8 text-center text-xs text-muted-foreground">
+        {t("loading")}
+      </p>
+    )
+  if (error)
+    return (
+      <p className="p-8 text-center text-xs text-destructive">
+        {t("error")}: {error}
+      </p>
+    )
+  if (files.length === 0)
+    return (
+      <p className="p-8 text-center text-xs text-muted-foreground">
+        {t("empty")}
+      </p>
+    )
+
+  return (
+    <div
+      data-slot="file-explorer-list"
+      className={cn("flex flex-col divide-y", className)}
+      {...props}
+    >
+      {sortedFiles(files).map((file) => {
+        const Icon = getFileIcon(file)
+        return (
+          <div
+            key={file.id}
+            role="button"
+            tabIndex={0}
+            className="flex cursor-pointer select-none items-center gap-3 px-3 py-2 text-xs hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+            onClick={() => {
+              if (file.type === "folder") navigateTo(file.path)
+              else selectFile(file)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                if (file.type === "folder") navigateTo(file.path)
+                else selectFile(file)
+              }
+            }}
+          >
+            <HugeiconsIcon
+              icon={Icon}
+              className={cn(
+                "size-5 shrink-0",
+                file.type === "folder"
+                  ? "text-primary"
+                  : "text-muted-foreground"
+              )}
+            />
+            <span className="flex-1 truncate">{file.name}</span>
+            {file.size !== undefined && (
+              <span className="shrink-0 text-muted-foreground">
+                {formatBytes(file.size)}
+              </span>
+            )}
+            <span className="hidden shrink-0 text-muted-foreground sm:block">
+              {formatDate(file.modifiedAt)}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// FileExplorer.DropZone
+// ---------------------------------------------------------------------------
+
+function FileExplorerDropZone({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<"div">) {
+  const { uploadFiles } = useFileExplorer()
+  const [isDragOver, setIsDragOver] = useState(false)
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false)
+    }
+  }, [])
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault()
+      setIsDragOver(false)
+      const files = Array.from(e.dataTransfer.files)
+      if (files.length > 0) await uploadFiles(files)
+    },
+    [uploadFiles]
+  )
+
+  return (
+    <div
+      data-slot="file-explorer-dropzone"
+      data-drag-over={isDragOver ? "" : undefined}
+      className={cn(
+        "relative flex-1 overflow-auto transition-colors motion-reduce:transition-none",
+        isDragOver && "bg-primary/5 ring-2 ring-inset ring-primary",
+        className
+      )}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      {...props}
+    >
+      {children}
+    </div>
+  )
+}
