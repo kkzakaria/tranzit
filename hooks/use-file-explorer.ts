@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -56,7 +56,7 @@ export function useFileExplorer() {
   return ctx
 }
 
-const VIEW_MODE_KEY = "file-explorer:view-mode"
+const VIEW_MODE_KEY = "file-explorer:v1:view-mode"
 
 // ---------------------------------------------------------------------------
 // Hook (used by the root FileExplorer component)
@@ -73,6 +73,12 @@ export function useFileExplorerState(
   const [viewMode, setViewModeState] = useState<"grid" | "list">("grid")
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+
+  // Stable ref to currentPath so uploadFiles doesn't recreate on every navigation
+  const currentPathRef = useRef(currentPath)
+  useEffect(() => {
+    currentPathRef.current = currentPath
+  }, [currentPath])
 
   // Hydrate viewMode from localStorage after mount
   useEffect(() => {
@@ -142,7 +148,7 @@ export function useFileExplorerState(
       try {
         const formData = new FormData()
         newFiles.forEach((f) => formData.append("files", f))
-        formData.append("path", currentPath)
+        formData.append("path", currentPathRef.current)
         const res = await fetch(
           `/api/projects/${projectId}/files/upload`,
           { method: "POST", body: formData }
@@ -151,7 +157,7 @@ export function useFileExplorerState(
         setUploadProgress(100)
         // Refresh file list
         const r = await fetch(
-          `/api/projects/${projectId}/files?path=${encodeURIComponent(currentPath)}`
+          `/api/projects/${projectId}/files?path=${encodeURIComponent(currentPathRef.current)}`
         )
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         const { items } = (await r.json()) as { items: FileItem[] }
@@ -161,7 +167,7 @@ export function useFileExplorerState(
         setUploadProgress(0)
       }
     },
-    [projectId, currentPath]
+    [projectId]
   )
 
   const renameFile = useCallback(

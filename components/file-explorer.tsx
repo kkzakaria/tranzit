@@ -144,14 +144,14 @@ function FileExplorerPreview({
             <dd>{formatBytes(file.size)}</dd>
           </>
         )}
-        {file.mimeType && (
+        {file.mimeType ? (
           <>
             <dt className="font-medium text-muted-foreground">
               {t("detail.type")}
             </dt>
             <dd className="truncate">{file.mimeType}</dd>
           </>
-        )}
+        ) : null}
         <dt className="font-medium text-muted-foreground">
           {t("detail.modified")}
         </dt>
@@ -548,7 +548,7 @@ function FileExplorerItem({
 // ---------------------------------------------------------------------------
 
 function sortedFiles(files: FileItem[]) {
-  return [...files].sort((a, b) => {
+  return files.toSorted((a, b) => {
     if (a.type !== b.type) return a.type === "folder" ? -1 : 1
     return a.name.localeCompare(b.name)
   })
