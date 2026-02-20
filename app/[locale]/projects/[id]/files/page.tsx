@@ -1,6 +1,11 @@
 import { getTranslations } from "next-intl/server"
 
+import { routing } from "@/i18n/routing"
 import { FileExplorer } from "@/components/file-explorer"
+
+import { FileExplorerView } from "./_file-explorer-view"
+
+type Locale = (typeof routing.locales)[number]
 
 export async function generateMetadata({
   params,
@@ -8,7 +13,10 @@ export async function generateMetadata({
   params: Promise<{ id: string; locale: string }>
 }) {
   const { locale } = await params
-  const t = await getTranslations({ locale, namespace: "file-explorer" })
+  const t = await getTranslations({
+    locale: locale as Locale,
+    namespace: "file-explorer",
+  })
   return { title: t("title") }
 }
 
@@ -26,7 +34,7 @@ export default async function ProjectFilesPage({
         <FileExplorer.Toolbar />
         <FileExplorer.DropZone>
           <div className="p-4">
-            <FileExplorer.Grid />
+            <FileExplorerView />
           </div>
         </FileExplorer.DropZone>
         <FileExplorer.Sheet />
