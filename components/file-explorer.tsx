@@ -611,3 +611,114 @@ function FileExplorerDropZone({
     </div>
   )
 }
+
+// ---------------------------------------------------------------------------
+// FileExplorer.Toolbar
+// ---------------------------------------------------------------------------
+
+function FileExplorerToolbar({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  const t = useTranslations("file-explorer")
+  const {
+    breadcrumbs,
+    navigateTo,
+    viewMode,
+    setViewMode,
+    isUploading,
+    uploadFiles,
+  } = useFileExplorer()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  return (
+    <div
+      data-slot="file-explorer-toolbar"
+      className={cn(
+        "flex shrink-0 items-center gap-2 overflow-hidden border-b px-4 py-2",
+        className
+      )}
+      {...props}
+    >
+      {/* Breadcrumbs */}
+      <nav
+        aria-label="Fil d'Ariane"
+        className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-xs"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {breadcrumbs.map((crumb, index) => (
+          <React.Fragment key={crumb.path}>
+            {index > 0 && (
+              <span className="shrink-0 text-muted-foreground">/</span>
+            )}
+            <button
+              className={cn(
+                "shrink-0 rounded px-1 py-0.5 transition-colors motion-reduce:transition-none hover:bg-muted",
+                index === breadcrumbs.length - 1
+                  ? "font-medium text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => navigateTo(crumb.path)}
+            >
+              {index === 0 ? t("root") : crumb.name}
+            </button>
+          </React.Fragment>
+        ))}
+      </nav>
+
+      <div className="flex shrink-0 items-center gap-1">
+        {isUploading && (
+          <span className="animate-pulse text-xs text-muted-foreground motion-reduce:animate-none">
+            {t("uploading")}
+          </span>
+        )}
+
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t("viewGrid")}
+          aria-pressed={viewMode === "grid"}
+          onClick={() => setViewMode("grid")}
+          className={cn(viewMode === "grid" && "bg-muted")}
+        >
+          <HugeiconsIcon icon={GridViewIcon} />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t("viewList")}
+          aria-pressed={viewMode === "list"}
+          onClick={() => setViewMode("list")}
+          className={cn(viewMode === "list" && "bg-muted")}
+        >
+          <HugeiconsIcon icon={LeftToRightListBulletIcon} />
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+        >
+          <HugeiconsIcon icon={UploadIcon} />
+          <span className="hidden sm:inline">{t("upload")}</span>
+        </Button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="sr-only"
+          onChange={async (e) => {
+            const files = Array.from(e.target.files ?? [])
+            if (files.length > 0) {
+              await uploadFiles(files)
+              e.target.value = ""
+            }
+          }}
+        />
+      </div>
+    </div>
+  )
+}
