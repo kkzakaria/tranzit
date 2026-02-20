@@ -9,7 +9,7 @@ import { Tooltip } from "@base-ui/react/tooltip"
 import { Cancel01Icon, Menu01Icon, Pin02Icon, PinOffIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 
-import Link from "next/link"
+import { Link } from "@/lib/navigation"
 
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
