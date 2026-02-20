@@ -20,6 +20,7 @@ import {
   NotificationButton,
   AppBarAvatar,
 } from "@/components/app-bar";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 const nunitoSans = Nunito_Sans({ variable: "--font-sans", subsets: ["latin"] });
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -60,6 +61,7 @@ export default async function LocaleLayout({
                 <AppBarLogo />
               </div>
               <AppBarActions>
+                <LanguageSwitcher />
                 <ThemeToggle />
                 <NotificationButton count={3} />
                 <AppBarAvatar
