@@ -8,11 +8,21 @@ export default getRequestConfig(async ({ requestLocale }) => {
     ? requested
     : routing.defaultLocale;
 
-  const [common, navigation, appbar] = await Promise.all([
-    import(`../messages/${locale}/common.json`).then((m) => m.default),
-    import(`../messages/${locale}/navigation.json`).then((m) => m.default),
-    import(`../messages/${locale}/appbar.json`).then((m) => m.default),
-  ]);
+  let common, navigation, appbar;
+  try {
+    [common, navigation, appbar] = await Promise.all([
+      import(`../messages/${locale}/common.json`).then((m) => m.default),
+      import(`../messages/${locale}/navigation.json`).then((m) => m.default),
+      import(`../messages/${locale}/appbar.json`).then((m) => m.default),
+    ]);
+  } catch (err) {
+    console.error(
+      `[i18n] Failed to load messages for locale "${locale}". ` +
+        "Ensure common.json, navigation.json, and appbar.json exist and are valid JSON.",
+      err
+    );
+    throw err;
+  }
 
   return {
     locale,

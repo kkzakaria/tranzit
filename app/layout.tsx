@@ -6,7 +6,13 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const locale = await getLocale();
+  let locale: string;
+  try {
+    locale = await getLocale();
+  } catch (err) {
+    console.error("[RootLayout] getLocale() failed, falling back to default locale:", err);
+    locale = "fr";
+  }
   const dir = locale === "ar" ? "rtl" : "ltr";
 
   return (
