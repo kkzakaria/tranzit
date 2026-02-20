@@ -130,7 +130,7 @@ function Sidebar({
             data-pinned={pinned ? "" : undefined}
             className={cn(
               "group/sidebar hidden h-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear motion-reduce:transition-none md:flex",
-              pinned ? "relative" : "absolute inset-y-0 left-0 z-10",
+              pinned ? "relative" : "absolute inset-y-0 start-0 z-10",
               className
             )}
             style={{ width: expanded ? expandedWidth : collapsedWidth }}

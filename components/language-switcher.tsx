@@ -5,6 +5,7 @@ import { Globe02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
 import { routing } from "@/i18n/routing"
+import type { Locale } from "@/i18n/routing"
 import { usePathname, useRouter } from "@/lib/navigation"
 import { buttonVariants } from "@/components/ui/button"
 import {
@@ -15,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-const LOCALE_LABELS: Record<string, string> = {
+const LOCALE_LABELS: Record<Locale, string> = {
   fr: "Français",
   en: "English",
   ar: "العربية",
@@ -28,8 +29,16 @@ export function LanguageSwitcher() {
   const pathname = usePathname()
   const t = useTranslations("appbar")
 
-  function handleChange(nextLocale: string) {
-    router.replace(pathname, { locale: nextLocale })
+  function handleChange(nextLocale: Locale) {
+    const result: unknown = router.replace(pathname, { locale: nextLocale })
+    if (result instanceof Promise) {
+      result.catch((err: unknown) => {
+        console.error(
+          `[LanguageSwitcher] Navigation failed when switching to locale "${nextLocale}":`,
+          err
+        )
+      })
+    }
   }
 
   return (
