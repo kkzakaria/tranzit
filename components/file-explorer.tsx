@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -82,7 +82,15 @@ function getFileIcon(item: FileItem) {
 // FileExplorer.Preview
 // ---------------------------------------------------------------------------
 
-function FileExplorerPreview({ file }: { file: FileItem }) {
+function FileExplorerPreview({
+  file,
+  className,
+  ...props
+}: {
+  file: FileItem
+  className?: string
+  [key: string]: unknown
+}) {
   const t = useTranslations("file-explorer")
 
   const content = (() => {
@@ -121,7 +129,11 @@ function FileExplorerPreview({ file }: { file: FileItem }) {
   })()
 
   return (
-    <div className="flex flex-col gap-4" data-slot="file-explorer-preview">
+    <div
+      className={cn("flex flex-col gap-4", className)}
+      data-slot="file-explorer-preview"
+      {...props}
+    >
       {content}
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-xs">
         {file.size !== undefined && (
@@ -169,7 +181,7 @@ function FileExplorerSheet() {
   }, [selectedFile, deleteFile])
 
   return (
-    <>
+    <div data-slot="file-explorer-sheet" className="contents">
       <Sheet
         open={selectedFile !== null}
         onOpenChange={(open) => {
@@ -210,7 +222,7 @@ function FileExplorerSheet() {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label="Fermer"
+                    aria-label={t("close")}
                   >
                     <HugeiconsIcon icon={Cancel01Icon} />
                   </Button>
@@ -243,7 +255,7 @@ function FileExplorerSheet() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   )
 }
 
@@ -252,7 +264,13 @@ function FileExplorerSheet() {
 // FileExplorer.Item
 // ---------------------------------------------------------------------------
 
-function FileExplorerItem({ item }: { item: FileItem }) {
+function FileExplorerItem({
+  item,
+  variant = "grid",
+}: {
+  item: FileItem
+  variant?: "grid" | "list"
+}) {
   const t = useTranslations("file-explorer")
   const { navigateTo, selectFile, renameFile, deleteFile } = useFileExplorer()
   const [isRenaming, setIsRenaming] = useState(false)
@@ -273,8 +291,14 @@ function FileExplorerItem({ item }: { item: FileItem }) {
   const handleRenameStart = useCallback(() => {
     setRenameValue(item.name)
     setIsRenaming(true)
-    setTimeout(() => inputRef.current?.select(), 0)
   }, [item.name])
+
+  // Focus and select the rename input when renaming starts
+  useEffect(() => {
+    if (isRenaming) {
+      inputRef.current?.select()
+    }
+  }, [isRenaming])
 
   const handleRenameCommit = useCallback(async () => {
     const trimmed = renameValue.trim()
@@ -297,6 +321,141 @@ function FileExplorerItem({ item }: { item: FileItem }) {
     setDeleteOpen(false)
   }, [item.id, deleteFile])
 
+  const contextMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={t("moreActions")}
+          >
+            <HugeiconsIcon icon={More03Icon} />
+          </Button>
+        }
+      />
+      <DropdownMenuContent side="bottom" align="end">
+        <DropdownMenuItem onSelect={handleRenameStart}>
+          <HugeiconsIcon icon={Edit01Icon} />
+          {t("actions.rename")}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          render={
+            <a
+              href={`/api/projects/preview?id=${item.id}`}
+              download={item.name}
+            />
+          }
+        >
+          <HugeiconsIcon icon={Download01Icon} />
+          {t("actions.download")}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          onSelect={() => setDeleteOpen(true)}
+        >
+          <HugeiconsIcon icon={Delete02Icon} />
+          {t("actions.delete")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+
+  if (variant === "list") {
+    return (
+      <>
+        <div
+          data-slot="file-explorer-item"
+          role="button"
+          tabIndex={0}
+          aria-label={item.name}
+          className={cn(
+            "group/item flex cursor-pointer select-none items-center gap-3 px-3 py-2 text-xs",
+            "hover:bg-muted focus-visible:bg-muted focus-visible:outline-none",
+            "transition-colors motion-reduce:transition-none"
+          )}
+          onClick={handleActivate}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              handleActivate()
+            }
+          }}
+          onDoubleClick={(e) => {
+            e.preventDefault()
+            handleRenameStart()
+          }}
+        >
+          <HugeiconsIcon
+            icon={Icon}
+            className={cn(
+              "size-5 shrink-0",
+              item.type === "folder"
+                ? "text-primary"
+                : "text-muted-foreground"
+            )}
+          />
+
+          {isRenaming ? (
+            <input
+              ref={inputRef}
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onBlur={handleRenameCommit}
+              onKeyDown={handleRenameKeyDown}
+              onClick={(e) => e.stopPropagation()}
+              className="flex-1 rounded border bg-background px-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+              aria-label={t("rename.label")}
+            />
+          ) : (
+            <span className="flex-1 truncate">{item.name}</span>
+          )}
+
+          {item.size !== undefined && (
+            <span className="shrink-0 text-muted-foreground">
+              {formatBytes(item.size)}
+            </span>
+          )}
+          <span className="hidden shrink-0 text-muted-foreground sm:block">
+            {formatDate(item.modifiedAt)}
+          </span>
+
+          <div
+            className={cn(
+              "opacity-0 transition-opacity motion-reduce:transition-none",
+              "group-hover/item:opacity-100 group-focus-within/item:opacity-100"
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {contextMenu}
+          </div>
+        </div>
+
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("delete.description")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("delete.cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                onClick={handleDelete}
+              >
+                {t("delete.confirm")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
+    )
+  }
+
+  // variant === "grid"
   return (
     <>
       <div
@@ -357,44 +516,7 @@ function FileExplorerItem({ item }: { item: FileItem }) {
           )}
           onClick={(e) => e.stopPropagation()}
         >
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  aria-label="Plus d'actions"
-                >
-                  <HugeiconsIcon icon={More03Icon} />
-                </Button>
-              }
-            />
-            <DropdownMenuContent side="bottom" align="end">
-              <DropdownMenuItem onSelect={handleRenameStart}>
-                <HugeiconsIcon icon={Edit01Icon} />
-                {t("actions.rename")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => {
-                  const a = document.createElement("a")
-                  a.href = `/api/projects/preview?id=${item.id}`
-                  a.download = item.name
-                  a.click()
-                }}
-              >
-                <HugeiconsIcon icon={Download01Icon} />
-                {t("actions.download")}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onSelect={() => setDeleteOpen(true)}
-              >
-                <HugeiconsIcon icon={Delete02Icon} />
-                {t("actions.delete")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {contextMenu}
         </div>
       </div>
 
@@ -442,6 +564,7 @@ function FileExplorerGrid({
 }: React.ComponentProps<"div">) {
   const { files, isLoading, error } = useFileExplorer()
   const t = useTranslations("file-explorer")
+  const sorted = useMemo(() => sortedFiles(files), [files])
 
   if (isLoading)
     return (
@@ -449,12 +572,14 @@ function FileExplorerGrid({
         {t("loading")}
       </p>
     )
-  if (error)
+  if (error) {
+    console.error(error)
     return (
       <p className="p-8 text-center text-xs text-destructive">
-        {t("error")}: {error}
+        {t("error")}
       </p>
     )
+  }
   if (files.length === 0)
     return (
       <p className="p-8 text-center text-xs text-muted-foreground">
@@ -471,7 +596,7 @@ function FileExplorerGrid({
       )}
       {...props}
     >
-      {sortedFiles(files).map((file) => (
+      {sorted.map((file) => (
         <FileExplorerItem key={file.id} item={file} />
       ))}
     </div>
@@ -486,9 +611,9 @@ function FileExplorerList({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const { files, isLoading, error, navigateTo, selectFile } =
-    useFileExplorer()
+  const { files, isLoading, error } = useFileExplorer()
   const t = useTranslations("file-explorer")
+  const sorted = useMemo(() => sortedFiles(files), [files])
 
   if (isLoading)
     return (
@@ -496,12 +621,14 @@ function FileExplorerList({
         {t("loading")}
       </p>
     )
-  if (error)
+  if (error) {
+    console.error(error)
     return (
       <p className="p-8 text-center text-xs text-destructive">
-        {t("error")}: {error}
+        {t("error")}
       </p>
     )
+  }
   if (files.length === 0)
     return (
       <p className="p-8 text-center text-xs text-muted-foreground">
@@ -515,47 +642,9 @@ function FileExplorerList({
       className={cn("flex flex-col divide-y", className)}
       {...props}
     >
-      {sortedFiles(files).map((file) => {
-        const Icon = getFileIcon(file)
-        return (
-          <div
-            key={file.id}
-            role="button"
-            tabIndex={0}
-            className="flex cursor-pointer select-none items-center gap-3 px-3 py-2 text-xs hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
-            onClick={() => {
-              if (file.type === "folder") navigateTo(file.path)
-              else selectFile(file)
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault()
-                if (file.type === "folder") navigateTo(file.path)
-                else selectFile(file)
-              }
-            }}
-          >
-            <HugeiconsIcon
-              icon={Icon}
-              className={cn(
-                "size-5 shrink-0",
-                file.type === "folder"
-                  ? "text-primary"
-                  : "text-muted-foreground"
-              )}
-            />
-            <span className="flex-1 truncate">{file.name}</span>
-            {file.size !== undefined && (
-              <span className="shrink-0 text-muted-foreground">
-                {formatBytes(file.size)}
-              </span>
-            )}
-            <span className="hidden shrink-0 text-muted-foreground sm:block">
-              {formatDate(file.modifiedAt)}
-            </span>
-          </div>
-        )
-      })}
+      {sorted.map((file) => (
+        <FileExplorerItem key={file.id} item={file} variant="list" />
+      ))}
     </div>
   )
 }
@@ -642,7 +731,7 @@ function FileExplorerToolbar({
     >
       {/* Breadcrumbs */}
       <nav
-        aria-label="Fil d'Ariane"
+        aria-label={t("breadcrumb")}
         className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-xs"
         style={{ scrollbarWidth: "none" }}
       >
@@ -721,4 +810,61 @@ function FileExplorerToolbar({
       </div>
     </div>
   )
+}
+
+// ---------------------------------------------------------------------------
+// FileExplorer (root — compound component)
+// ---------------------------------------------------------------------------
+
+type FileExplorerComponent = React.FC<
+  React.ComponentProps<"div"> & { projectId: string }
+> & {
+  Toolbar: typeof FileExplorerToolbar
+  DropZone: typeof FileExplorerDropZone
+  Grid: typeof FileExplorerGrid
+  List: typeof FileExplorerList
+  Item: typeof FileExplorerItem
+  Sheet: typeof FileExplorerSheet
+  Preview: typeof FileExplorerPreview
+}
+
+const FileExplorer = function FileExplorer({
+  projectId,
+  className,
+  ...props
+}: React.ComponentProps<"div"> & { projectId: string }) {
+  const value = useFileExplorerState(projectId)
+
+  return (
+    <FileExplorerContext.Provider value={value}>
+      <div
+        data-slot="file-explorer"
+        className={cn("flex h-full flex-col overflow-hidden", className)}
+        {...props}
+      />
+    </FileExplorerContext.Provider>
+  )
+} as FileExplorerComponent
+
+FileExplorer.Toolbar = FileExplorerToolbar
+FileExplorer.DropZone = FileExplorerDropZone
+FileExplorer.Grid = FileExplorerGrid
+FileExplorer.List = FileExplorerList
+FileExplorer.Item = FileExplorerItem
+FileExplorer.Sheet = FileExplorerSheet
+FileExplorer.Preview = FileExplorerPreview
+
+// ---------------------------------------------------------------------------
+// Exports
+// ---------------------------------------------------------------------------
+
+export {
+  FileExplorer,
+  FileExplorerDropZone,
+  FileExplorerGrid,
+  FileExplorerItem,
+  FileExplorerList,
+  FileExplorerPreview,
+  FileExplorerSheet,
+  FileExplorerToolbar,
 }

@@ -29,5 +29,8 @@
     "modified": "修改时间",
     "path": "路径",
     "noPreview": "此文件类型不支持预览"
-  }
+  },
+  "close": "关闭",
+  "breadcrumb": "面包屑导航",
+  "moreActions": "更多操作"
 }

@@ -89,7 +89,7 @@ export function useFileExplorerState(
 
   const breadcrumbs = useMemo<Breadcrumb[]>(() => {
     const parts = currentPath.split("/").filter(Boolean)
-    const crumbs: Breadcrumb[] = [{ name: "Racine", path: "/" }]
+    const crumbs: Breadcrumb[] = [{ name: "", path: "/" }]
     parts.reduce((acc, part) => {
       const path = `${acc}/${part}`
       crumbs.push({ name: part, path })
@@ -114,6 +114,7 @@ export function useFileExplorerState(
         if (!cancelled) setFiles(items)
       })
       .catch((e: unknown) => {
+        console.error("[FileExplorer] Failed to fetch files:", e)
         if (!cancelled)
           setError(e instanceof Error ? e.message : "Erreur inconnue")
       })

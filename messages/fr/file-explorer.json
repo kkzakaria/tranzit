@@ -29,5 +29,8 @@
     "modified": "Modifié le",
     "path": "Chemin",
     "noPreview": "Aperçu non disponible pour ce type de fichier"
-  }
+  },
+  "close": "Fermer",
+  "breadcrumb": "Fil d'Ariane",
+  "moreActions": "Plus d'actions"
 }

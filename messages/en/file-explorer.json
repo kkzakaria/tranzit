@@ -29,5 +29,8 @@
     "modified": "Modified",
     "path": "Path",
     "noPreview": "No preview available for this file type"
-  }
+  },
+  "close": "Close",
+  "breadcrumb": "Breadcrumb",
+  "moreActions": "More actions"
 }
