@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import Link from "next/link"
+import { Link } from "@/lib/navigation"
 import {
   Sun02Icon,
   Moon02Icon,
@@ -28,6 +28,7 @@ import {
 import {
   ThemeContext,
   THEME_STORAGE_KEY,
+  useTheme,
   type Theme,
   type ThemeContextValue,
 } from "@/hooks/use-theme"
@@ -49,7 +50,11 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
         document.documentElement.classList.toggle("dark", stored === "dark")
         return
       }
-    } catch {}
+    } catch (err) {
+      if (!(err instanceof DOMException)) {
+        console.error("[ThemeProvider] Unexpected error reading theme preference:", err)
+      }
+    }
 
     // Fallback: system preference
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -65,7 +70,11 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
       document.documentElement.classList.toggle("dark", next === "dark")
       try {
         localStorage.setItem(THEME_STORAGE_KEY, next)
-      } catch {}
+      } catch (err) {
+        if (!(err instanceof DOMException)) {
+          console.error("[ThemeProvider] Unexpected error saving theme preference:", err)
+        }
+      }
       return next
     })
   }, [])
@@ -154,7 +163,7 @@ function AppBarActions({
 // ---------------------------------------------------------------------------
 
 function ThemeToggle({ className, ...props }: React.ComponentProps<typeof Button>) {
-  const { theme, toggleTheme } = React.useContext(ThemeContext) ?? { theme: "light" as Theme, toggleTheme: () => {} }
+  const { theme, toggleTheme } = useTheme()
   const t = useTranslations("appbar")
 
   return (
@@ -237,7 +246,7 @@ function AppBarAvatar({
     : "?"
 
   return (
-    <div data-slot="app-bar-avatar" className={cn("ml-1", className)} {...props}>
+    <div data-slot="app-bar-avatar" className={cn("ms-1", className)} {...props}>
       <DropdownMenu>
         <DropdownMenuTrigger
           className="flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
