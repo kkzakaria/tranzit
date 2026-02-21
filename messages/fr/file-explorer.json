@@ -1,0 +1,36 @@
+{
+  "title": "Fichiers",
+  "upload": "Téléverser",
+  "uploading": "Envoi en cours…",
+  "viewGrid": "Vue grille",
+  "viewList": "Vue liste",
+  "root": "Racine",
+  "empty": "Aucun fichier dans ce dossier",
+  "loading": "Chargement…",
+  "error": "Impossible de charger les fichiers",
+  "actions": {
+    "rename": "Renommer",
+    "delete": "Supprimer",
+    "download": "Télécharger",
+    "move": "Déplacer"
+  },
+  "rename": {
+    "label": "Nouveau nom"
+  },
+  "delete": {
+    "title": "Supprimer ce fichier ?",
+    "description": "Cette action est irréversible. Le fichier sera définitivement supprimé.",
+    "confirm": "Supprimer",
+    "cancel": "Annuler"
+  },
+  "detail": {
+    "size": "Taille",
+    "type": "Type",
+    "modified": "Modifié le",
+    "path": "Chemin",
+    "noPreview": "Aperçu non disponible pour ce type de fichier"
+  },
+  "close": "Fermer",
+  "breadcrumb": "Fil d'Ariane",
+  "moreActions": "Plus d'actions"
+}

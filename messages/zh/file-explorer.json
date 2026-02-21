@@ -1,0 +1,36 @@
+{
+  "title": "文件",
+  "upload": "上传",
+  "uploading": "上传中…",
+  "viewGrid": "网格视图",
+  "viewList": "列表视图",
+  "root": "根目录",
+  "empty": "此文件夹中没有文件",
+  "loading": "加载中…",
+  "error": "无法加载文件",
+  "actions": {
+    "rename": "重命名",
+    "delete": "删除",
+    "download": "下载",
+    "move": "移动"
+  },
+  "rename": {
+    "label": "新名称"
+  },
+  "delete": {
+    "title": "删除此文件？",
+    "description": "此操作无法撤销，文件将被永久删除。",
+    "confirm": "删除",
+    "cancel": "取消"
+  },
+  "detail": {
+    "size": "大小",
+    "type": "类型",
+    "modified": "修改时间",
+    "path": "路径",
+    "noPreview": "此文件类型不支持预览"
+  },
+  "close": "关闭",
+  "breadcrumb": "面包屑导航",
+  "moreActions": "更多操作"
+}

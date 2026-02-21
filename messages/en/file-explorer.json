@@ -1,0 +1,36 @@
+{
+  "title": "Files",
+  "upload": "Upload",
+  "uploading": "Uploading…",
+  "viewGrid": "Grid view",
+  "viewList": "List view",
+  "root": "Root",
+  "empty": "No files in this folder",
+  "loading": "Loading…",
+  "error": "Could not load files",
+  "actions": {
+    "rename": "Rename",
+    "delete": "Delete",
+    "download": "Download",
+    "move": "Move"
+  },
+  "rename": {
+    "label": "New name"
+  },
+  "delete": {
+    "title": "Delete this file?",
+    "description": "This action cannot be undone. The file will be permanently deleted.",
+    "confirm": "Delete",
+    "cancel": "Cancel"
+  },
+  "detail": {
+    "size": "Size",
+    "type": "Type",
+    "modified": "Modified",
+    "path": "Path",
+    "noPreview": "No preview available for this file type"
+  },
+  "close": "Close",
+  "breadcrumb": "Breadcrumb",
+  "moreActions": "More actions"
+}

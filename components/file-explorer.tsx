@@ -1,0 +1,900 @@
+// Documentation & usage examples: ./file-explorer.md
+
+"use client"
+
+import * as React from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
+import { HugeiconsIcon } from "@hugeicons/react"
+import {
+  Cancel01Icon,
+  Delete02Icon,
+  Download01Icon,
+  Edit01Icon,
+  File01Icon,
+  Folder01Icon,
+  GridViewIcon,
+  ImageIcon,
+  LeftToRightListBulletIcon,
+  More03Icon,
+  UploadIcon,
+} from "@hugeicons/core-free-icons"
+
+import { cn } from "@/lib/utils"
+import {
+  FileExplorerContext,
+  useFileExplorer,
+  useFileExplorerState,
+  type FileItem,
+} from "@/hooks/use-file-explorer"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  Sheet,
+  SheetBody,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} o`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`
+}
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  })
+}
+
+function getFileIcon(item: FileItem) {
+  if (item.type === "folder") return Folder01Icon
+  if (item.mimeType?.startsWith("image/")) return ImageIcon
+  return File01Icon
+}
+
+// ---------------------------------------------------------------------------
+// FileExplorer.Preview
+// ---------------------------------------------------------------------------
+
+function FileExplorerPreview({
+  file,
+  className,
+  ...props
+}: {
+  file: FileItem
+  className?: string
+  [key: string]: unknown
+}) {
+  const t = useTranslations("file-explorer")
+
+  const content = (() => {
+    if (file.type === "folder") return null
+
+    if (file.mimeType?.startsWith("image/")) {
+      return (
+        <div className="flex min-h-48 items-center justify-center overflow-hidden rounded-lg bg-muted">
+          {/* TODO: replace /api/projects/preview with the real backend preview endpoint */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/api/projects/preview?id=${file.id}`}
+            alt={file.name}
+            className="max-h-64 w-full object-contain"
+          />
+        </div>
+      )
+    }
+
+    if (file.mimeType === "application/pdf") {
+      return (
+        <iframe
+          src={`/api/projects/preview?id=${file.id}`}
+          className="h-64 w-full rounded-lg border"
+          title={file.name}
+        />
+      )
+    }
+
+    return (
+      <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
+        <HugeiconsIcon icon={File01Icon} className="size-12 opacity-40" />
+        <p className="text-center text-xs">{t("detail.noPreview")}</p>
+      </div>
+    )
+  })()
+
+  return (
+    <div
+      className={cn("flex flex-col gap-4", className)}
+      data-slot="file-explorer-preview"
+      {...props}
+    >
+      {content}
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-xs">
+        {file.type === "file" && file.size !== undefined && (
+          <>
+            <dt className="font-medium text-muted-foreground">
+              {t("detail.size")}
+            </dt>
+            <dd>{formatBytes(file.size)}</dd>
+          </>
+        )}
+        {file.type === "file" && file.mimeType ? (
+          <>
+            <dt className="font-medium text-muted-foreground">
+              {t("detail.type")}
+            </dt>
+            <dd className="truncate">{file.mimeType}</dd>
+          </>
+        ) : null}
+        <dt className="font-medium text-muted-foreground">
+          {t("detail.modified")}
+        </dt>
+        <dd>{formatDate(file.modifiedAt)}</dd>
+        <dt className="font-medium text-muted-foreground">
+          {t("detail.path")}
+        </dt>
+        <dd className="truncate font-mono text-[0.65rem]">{file.path}</dd>
+      </dl>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// FileExplorer.Sheet
+// ---------------------------------------------------------------------------
+
+function FileExplorerSheet() {
+  const t = useTranslations("file-explorer")
+  const { selectedFile, selectFile, deleteFile } = useFileExplorer()
+  const [deleteOpen, setDeleteOpen] = useState(false)
+
+  const handleDelete = useCallback(async () => {
+    if (!selectedFile) return
+    try {
+      await deleteFile(selectedFile.id)
+    } catch {
+      // mutationError is set by the hook
+    }
+    setDeleteOpen(false)
+  }, [selectedFile, deleteFile])
+
+  return (
+    <div data-slot="file-explorer-sheet" className="contents">
+      <Sheet
+        open={selectedFile !== null}
+        onOpenChange={(open) => {
+          if (!open) selectFile(null)
+        }}
+      >
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>{selectedFile?.name ?? ""}</SheetTitle>
+            <div className="flex shrink-0 items-center gap-1">
+              {selectedFile && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={t("actions.download")}
+                    render={
+                      <a
+                        href={`/api/projects/preview?id=${selectedFile.id}`}
+                        download={selectedFile.name}
+                      />
+                    }
+                  >
+                    <HugeiconsIcon icon={Download01Icon} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={t("actions.delete")}
+                    onClick={() => setDeleteOpen(true)}
+                  >
+                    <HugeiconsIcon icon={Delete02Icon} />
+                  </Button>
+                </>
+              )}
+              <SheetClose
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={t("close")}
+                  >
+                    <HugeiconsIcon icon={Cancel01Icon} />
+                  </Button>
+                }
+              />
+            </div>
+          </SheetHeader>
+          <SheetBody>
+            {selectedFile && <FileExplorerPreview file={selectedFile} />}
+          </SheetBody>
+        </SheetContent>
+      </Sheet>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("delete.description")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("delete.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleDelete}
+            >
+              {t("delete.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  )
+}
+
+
+// ---------------------------------------------------------------------------
+// FileExplorer.Item
+// ---------------------------------------------------------------------------
+
+function FileExplorerItem({
+  item,
+  variant = "grid",
+}: {
+  item: FileItem
+  variant?: "grid" | "list"
+}) {
+  const t = useTranslations("file-explorer")
+  const { navigateTo, selectFile, renameFile, deleteFile } = useFileExplorer()
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [renameValue, setRenameValue] = useState(item.name)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const isSubmittingRef = useRef(false)
+
+  const Icon = getFileIcon(item)
+
+  const handleActivate = useCallback(() => {
+    if (item.type === "folder") {
+      navigateTo(item.path)
+    } else {
+      selectFile(item)
+    }
+  }, [item, navigateTo, selectFile])
+
+  const handleRenameStart = useCallback(() => {
+    setRenameValue(item.name)
+    setIsRenaming(true)
+  }, [item.name])
+
+  // Focus and select the rename input when renaming starts
+  useEffect(() => {
+    if (isRenaming) {
+      inputRef.current?.select()
+    }
+  }, [isRenaming])
+
+  const handleRenameCommit = useCallback(async () => {
+    if (isSubmittingRef.current) return
+    const trimmed = renameValue.trim()
+    if (trimmed && trimmed !== item.name) {
+      isSubmittingRef.current = true
+      try {
+        await renameFile(item.id, trimmed)
+      } catch {
+        // mutationError is set by the hook, keep input open for retry
+        isSubmittingRef.current = false
+        return
+      }
+      isSubmittingRef.current = false
+    }
+    setIsRenaming(false)
+  }, [item.id, item.name, renameValue, renameFile])
+
+  const handleRenameKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") handleRenameCommit()
+      if (e.key === "Escape") setIsRenaming(false)
+    },
+    [handleRenameCommit]
+  )
+
+  const handleDelete = useCallback(async () => {
+    try {
+      await deleteFile(item.id)
+    } catch {
+      // mutationError is set by the hook
+    }
+    setDeleteOpen(false)
+  }, [item.id, deleteFile])
+
+  const contextMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={t("moreActions")}
+          >
+            <HugeiconsIcon icon={More03Icon} />
+          </Button>
+        }
+      />
+      <DropdownMenuContent side="bottom" align="end">
+        <DropdownMenuItem onSelect={handleRenameStart}>
+          <HugeiconsIcon icon={Edit01Icon} />
+          {t("actions.rename")}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          render={
+            <a
+              href={`/api/projects/preview?id=${item.id}`}
+              download={item.name}
+            />
+          }
+        >
+          <HugeiconsIcon icon={Download01Icon} />
+          {t("actions.download")}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          onSelect={() => setDeleteOpen(true)}
+        >
+          <HugeiconsIcon icon={Delete02Icon} />
+          {t("actions.delete")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+
+  if (variant === "list") {
+    return (
+      <>
+        <div
+          data-slot="file-explorer-item"
+          role="button"
+          tabIndex={0}
+          aria-label={item.name}
+          className={cn(
+            "group/item flex cursor-pointer select-none items-center gap-3 px-3 py-2 text-xs",
+            "hover:bg-muted focus-visible:bg-muted focus-visible:outline-none",
+            "transition-colors motion-reduce:transition-none"
+          )}
+          onClick={handleActivate}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              handleActivate()
+            }
+          }}
+          onDoubleClick={(e) => {
+            e.preventDefault()
+            handleRenameStart()
+          }}
+        >
+          <HugeiconsIcon
+            icon={Icon}
+            className={cn(
+              "size-5 shrink-0",
+              item.type === "folder"
+                ? "text-primary"
+                : "text-muted-foreground"
+            )}
+          />
+
+          {isRenaming ? (
+            <input
+              ref={inputRef}
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onBlur={handleRenameCommit}
+              onKeyDown={handleRenameKeyDown}
+              onClick={(e) => e.stopPropagation()}
+              className="flex-1 rounded border bg-background px-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+              aria-label={t("rename.label")}
+            />
+          ) : (
+            <span className="flex-1 truncate">{item.name}</span>
+          )}
+
+          {item.type === "file" && item.size !== undefined && (
+            <span className="shrink-0 text-muted-foreground">
+              {formatBytes(item.size)}
+            </span>
+          )}
+          <span className="hidden shrink-0 text-muted-foreground sm:block">
+            {formatDate(item.modifiedAt)}
+          </span>
+
+          <div
+            className={cn(
+              "opacity-0 transition-opacity motion-reduce:transition-none",
+              "group-hover/item:opacity-100 group-focus-within/item:opacity-100"
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {contextMenu}
+          </div>
+        </div>
+
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("delete.description")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("delete.cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                onClick={handleDelete}
+              >
+                {t("delete.confirm")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
+    )
+  }
+
+  // variant === "grid"
+  return (
+    <>
+      <div
+        data-slot="file-explorer-item"
+        role="button"
+        tabIndex={0}
+        aria-label={item.name}
+        className={cn(
+          "group/item relative flex cursor-pointer select-none flex-col items-center gap-2 rounded-lg p-3 text-center",
+          "hover:bg-muted focus-visible:bg-muted focus-visible:outline-none",
+          "transition-colors motion-reduce:transition-none"
+        )}
+        onClick={handleActivate}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            handleActivate()
+          }
+        }}
+        onDoubleClick={(e) => {
+          e.preventDefault()
+          handleRenameStart()
+        }}
+      >
+        <HugeiconsIcon
+          icon={Icon}
+          className={cn(
+            "size-10 shrink-0",
+            item.type === "folder"
+              ? "text-primary"
+              : "text-muted-foreground"
+          )}
+        />
+
+        {isRenaming ? (
+          <input
+            ref={inputRef}
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onBlur={handleRenameCommit}
+            onKeyDown={handleRenameKeyDown}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full rounded border bg-background px-1 text-center text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+            aria-label={t("rename.label")}
+          />
+        ) : (
+          <span className="w-full truncate text-xs leading-tight">
+            {item.name}
+          </span>
+        )}
+
+        {/* Context menu button */}
+        <div
+          className={cn(
+            "absolute right-1 top-1",
+            "opacity-0 transition-opacity motion-reduce:transition-none",
+            "group-hover/item:opacity-100 group-focus-within/item:opacity-100"
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {contextMenu}
+        </div>
+      </div>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("delete.description")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("delete.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleDelete}
+            >
+              {t("delete.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Shared: sorted file list
+// ---------------------------------------------------------------------------
+
+function sortedFiles(files: FileItem[]) {
+  return files.toSorted((a, b) => {
+    if (a.type !== b.type) return a.type === "folder" ? -1 : 1
+    return a.name.localeCompare(b.name)
+  })
+}
+
+// ---------------------------------------------------------------------------
+// FileExplorer.Grid
+// ---------------------------------------------------------------------------
+
+function FileExplorerGrid({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  const { files, isLoading, error } = useFileExplorer()
+  const t = useTranslations("file-explorer")
+  const sorted = useMemo(() => sortedFiles(files), [files])
+
+  if (isLoading)
+    return (
+      <p className="p-8 text-center text-xs text-muted-foreground">
+        {t("loading")}
+      </p>
+    )
+  if (error) {
+    return (
+      <p className="p-8 text-center text-xs text-destructive">
+        {t("error")}
+      </p>
+    )
+  }
+  if (files.length === 0)
+    return (
+      <p className="p-8 text-center text-xs text-muted-foreground">
+        {t("empty")}
+      </p>
+    )
+
+  return (
+    <div
+      data-slot="file-explorer-grid"
+      className={cn(
+        "grid grid-cols-2 gap-1 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6",
+        className
+      )}
+      {...props}
+    >
+      {sorted.map((file) => (
+        <FileExplorerItem key={file.id} item={file} />
+      ))}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// FileExplorer.List
+// ---------------------------------------------------------------------------
+
+function FileExplorerList({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  const { files, isLoading, error } = useFileExplorer()
+  const t = useTranslations("file-explorer")
+  const sorted = useMemo(() => sortedFiles(files), [files])
+
+  if (isLoading)
+    return (
+      <p className="p-8 text-center text-xs text-muted-foreground">
+        {t("loading")}
+      </p>
+    )
+  if (error) {
+    return (
+      <p className="p-8 text-center text-xs text-destructive">
+        {t("error")}
+      </p>
+    )
+  }
+  if (files.length === 0)
+    return (
+      <p className="p-8 text-center text-xs text-muted-foreground">
+        {t("empty")}
+      </p>
+    )
+
+  return (
+    <div
+      data-slot="file-explorer-list"
+      className={cn("flex flex-col divide-y", className)}
+      {...props}
+    >
+      {sorted.map((file) => (
+        <FileExplorerItem key={file.id} item={file} variant="list" />
+      ))}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// FileExplorer.DropZone
+// ---------------------------------------------------------------------------
+
+function FileExplorerDropZone({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<"div">) {
+  const { uploadFiles } = useFileExplorer()
+  const [isDragOver, setIsDragOver] = useState(false)
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false)
+    }
+  }, [])
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault()
+      setIsDragOver(false)
+      const files = Array.from(e.dataTransfer.files)
+      if (files.length > 0) {
+        try {
+          await uploadFiles(files)
+        } catch {
+          // mutationError is set by the hook
+        }
+      }
+    },
+    [uploadFiles]
+  )
+
+  return (
+    <div
+      data-slot="file-explorer-dropzone"
+      data-drag-over={isDragOver ? "" : undefined}
+      className={cn(
+        "relative flex-1 overflow-auto transition-colors motion-reduce:transition-none",
+        isDragOver && "bg-primary/5 ring-2 ring-inset ring-primary",
+        className
+      )}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      {...props}
+    >
+      {children}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// FileExplorer.Toolbar
+// ---------------------------------------------------------------------------
+
+function FileExplorerToolbar({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  const t = useTranslations("file-explorer")
+  const {
+    breadcrumbs,
+    navigateTo,
+    viewMode,
+    setViewMode,
+    isUploading,
+    uploadFiles,
+    mutationError,
+  } = useFileExplorer()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  return (
+    <div
+      data-slot="file-explorer-toolbar"
+      className={cn(
+        "flex shrink-0 items-center gap-2 overflow-hidden border-b px-4 py-2",
+        className
+      )}
+      {...props}
+    >
+      {/* Breadcrumbs */}
+      <nav
+        aria-label={t("breadcrumb")}
+        className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-xs"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {breadcrumbs.map((crumb, index) => (
+          <React.Fragment key={crumb.path}>
+            {index > 0 && (
+              <span className="shrink-0 text-muted-foreground">/</span>
+            )}
+            <button
+              className={cn(
+                "shrink-0 rounded px-1 py-0.5 transition-colors motion-reduce:transition-none hover:bg-muted",
+                index === breadcrumbs.length - 1
+                  ? "font-medium text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => navigateTo(crumb.path)}
+            >
+              {index === 0 ? t("root") : crumb.name}
+            </button>
+          </React.Fragment>
+        ))}
+      </nav>
+
+      <div className="flex shrink-0 items-center gap-1">
+        {isUploading && (
+          <span className="animate-pulse text-xs text-muted-foreground motion-reduce:animate-none">
+            {t("uploading")}
+          </span>
+        )}
+
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t("viewGrid")}
+          aria-pressed={viewMode === "grid"}
+          onClick={() => setViewMode("grid")}
+          className={cn(viewMode === "grid" && "bg-muted")}
+        >
+          <HugeiconsIcon icon={GridViewIcon} />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t("viewList")}
+          aria-pressed={viewMode === "list"}
+          onClick={() => setViewMode("list")}
+          className={cn(viewMode === "list" && "bg-muted")}
+        >
+          <HugeiconsIcon icon={LeftToRightListBulletIcon} />
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+        >
+          <HugeiconsIcon icon={UploadIcon} />
+          <span className="hidden sm:inline">{t("upload")}</span>
+        </Button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="sr-only"
+          onChange={async (e) => {
+            const files = Array.from(e.target.files ?? [])
+            if (files.length > 0) {
+              try {
+                await uploadFiles(files)
+              } catch {
+                // mutationError is set by the hook
+              }
+              e.target.value = ""
+            }
+          }}
+        />
+      </div>
+      {mutationError && (
+        <p className="px-3 pb-2 text-xs text-destructive">{mutationError}</p>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// FileExplorer (root — compound component)
+// ---------------------------------------------------------------------------
+
+type FileExplorerComponent = React.FC<
+  React.ComponentProps<"div"> & { projectId: string }
+> & {
+  Toolbar: typeof FileExplorerToolbar
+  DropZone: typeof FileExplorerDropZone
+  Grid: typeof FileExplorerGrid
+  List: typeof FileExplorerList
+  Item: typeof FileExplorerItem
+  Sheet: typeof FileExplorerSheet
+  Preview: typeof FileExplorerPreview
+}
+
+const FileExplorer = function FileExplorer({
+  projectId,
+  className,
+  ...props
+}: React.ComponentProps<"div"> & { projectId: string }) {
+  const value = useFileExplorerState(projectId)
+
+  return (
+    <FileExplorerContext.Provider value={value}>
+      <div
+        data-slot="file-explorer"
+        className={cn("flex h-full flex-col overflow-hidden", className)}
+        {...props}
+      />
+    </FileExplorerContext.Provider>
+  )
+} as FileExplorerComponent
+
+FileExplorer.Toolbar = FileExplorerToolbar
+FileExplorer.DropZone = FileExplorerDropZone
+FileExplorer.Grid = FileExplorerGrid
+FileExplorer.List = FileExplorerList
+FileExplorer.Item = FileExplorerItem
+FileExplorer.Sheet = FileExplorerSheet
+FileExplorer.Preview = FileExplorerPreview
+
+// ---------------------------------------------------------------------------
+// Exports
+// ---------------------------------------------------------------------------
+
+export {
+  FileExplorer,
+  FileExplorerDropZone,
+  FileExplorerGrid,
+  FileExplorerItem,
+  FileExplorerList,
+  FileExplorerPreview,
+  FileExplorerSheet,
+  FileExplorerToolbar,
+}

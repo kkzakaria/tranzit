@@ -8,17 +8,18 @@ export default getRequestConfig(async ({ requestLocale }) => {
     ? requested
     : routing.defaultLocale;
 
-  let common, navigation, appbar;
+  let common, navigation, appbar, fileExplorer;
   try {
-    [common, navigation, appbar] = await Promise.all([
+    [common, navigation, appbar, fileExplorer] = await Promise.all([
       import(`../messages/${locale}/common.json`).then((m) => m.default),
       import(`../messages/${locale}/navigation.json`).then((m) => m.default),
       import(`../messages/${locale}/appbar.json`).then((m) => m.default),
+      import(`../messages/${locale}/file-explorer.json`).then((m) => m.default),
     ]);
   } catch (err) {
     console.error(
       `[i18n] Failed to load messages for locale "${locale}". ` +
-        "Ensure common.json, navigation.json, and appbar.json exist and are valid JSON.",
+        "Ensure common.json, navigation.json, appbar.json, and file-explorer.json exist and are valid JSON.",
       err
     );
     throw err;
@@ -26,6 +27,6 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
   return {
     locale,
-    messages: { common, navigation, appbar },
+    messages: { common, navigation, appbar, "file-explorer": fileExplorer },
   };
 });
