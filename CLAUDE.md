@@ -25,8 +25,14 @@
 ## Component Patterns
 - Compound components: Context provider + sub-components with `data-slot` attributes (see `sidebar.tsx`, `panel-layout.tsx`)
 - Each compound component has a companion `.md` doc file and a dedicated hook in `hooks/`
+- Compound sub-components (e.g. `FileExplorer.Toolbar`) are `undefined` from Server Components — wrap compound JSX in a `"use client"` component
 - localStorage hydration: use `useState(default)` + `useEffect` post-mount — NOT lazy initializer (causes hydration mismatch)
 - Media queries: use `useSyncExternalStore` with `matchMedia` (avoids `set-state-in-effect` lint error)
+
+## i18n / Routing
+- Next.js 16 uses `proxy.ts` instead of `middleware.ts` for request interception
+- `proxy.ts` matcher must exclude `api`: `"/((?!api|_next|_vercel|.*\\..*).*)"` — otherwise next-intl redirects `/api/` routes to `/fr/api/`
+- New i18n namespaces must be added in both: `i18n/request.ts` (Promise.all import + returned messages object)
 
 ## GitHub
 - Repo: kkzakaria/tranzit
