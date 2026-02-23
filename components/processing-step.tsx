@@ -118,7 +118,7 @@ function ConnectorLine({
   return (
     <div
       aria-hidden="true"
-      className="flex-1 self-center px-1"
+      className="flex-1 self-center"
     >
       <div
         className={cn(
