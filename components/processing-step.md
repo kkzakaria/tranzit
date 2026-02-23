@@ -50,8 +50,8 @@ import { HugeiconsIcon } from "@hugeicons/react"
 | Prop | Type | Required | Description |
 |---|---|---|---|
 | `step` | `number` | Yes | Step index (1-based) |
-| `label` | `string` | Yes | Label displayed below the indicator |
-| `icon` | `ReactNode` | No | Icon displayed above the indicator (e.g. `<HugeiconsIcon icon={...} />`). When omitted, an invisible spacer preserves vertical alignment — safe to pass an icon on only some items. |
+| `label` | `string` | Yes | Label displayed inside the pill, to the right of the icon. |
+| `icon` | `ReactNode` | No | Icon rendered inside the pill, to the left of the label (e.g. `<HugeiconsIcon icon={...} />`). Shown only in the `waiting` state — replaced by the status icon (spinner, checkmark, ✕) for all other states. When omitted on a `waiting` item, no icon slot is rendered. |
 | `status` | `StepStatus` | No | Explicit status — overrides derivation from `currentStep`. |
 | `className` | `string` | No | Extra CSS classes merged onto the `<li>` element. |
 | `...li props` | `Omit<React.ComponentProps<"li">, "children">` | — | All standard `<li>` HTML attributes (except `children`) are forwarded to the item element. |
@@ -61,7 +61,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 | Export | Kind | Description |
 |---|---|---|
 | `ProcessingStep` | Component | Root compound component. |
-| `ProcessingStepItem` | Component | Named re-export of `ProcessingStep.Item` (same component). |
+| `ProcessingStepItem` | Component | The underlying item component. `ProcessingStep.Item` is an alias for this export. |
 | `StepStatus` | Type | `"waiting" \| "active" \| "completed" \| "error"` — useful for typing local state. |
 
 ```tsx
@@ -75,10 +75,10 @@ const [status, setStatus] = React.useState<StepStatus>("waiting")
 
 | Status | Visual |
 |---|---|
-| `waiting` | Empty bordered circle, muted text |
-| `active` | Filled primary circle with spinner, medium-weight text |
-| `completed` | Filled primary circle with checkmark, normal-weight text |
-| `error` | Filled destructive circle with ✕, destructive-colored text |
+| `waiting` | Gray pill (`bg-muted`), business icon (if provided), muted text |
+| `active` | Primary pill, spinner replaces business icon, primary-foreground text |
+| `completed` | Green pill (`bg-green-600`), checkmark replaces business icon, white text |
+| `error` | Destructive pill, ✕ replaces business icon, white text |
 
 ## Status derivation
 
@@ -94,7 +94,7 @@ An explicit `status` prop on `ProcessingStep.Item` always takes priority.
 
 ## Connector lines
 
-The connector between two items is solid (`primary`) when the item to its left is completed, and dashed (`border`) otherwise.
+The connector between two items is solid green (`border-green-600`) when the item to its left is completed, and dashed (`border`) otherwise.
 
 > **Note:** Connector state is derived from `currentStep` on the root, not from the explicit `status` of adjacent items. If you mix `currentStep` and per-item `status` overrides, the connector may not reflect the visual state of the adjacent items.
 
@@ -102,5 +102,5 @@ The connector between two items is solid (`primary`) when the item to its left i
 
 - Root renders as `<ol>` with `aria-label` (default: `"Étapes de traitement"`, override per locale via the `aria-label` prop)
 - Active item has `aria-current="step"`
-- Indicator circle and connectors are `aria-hidden`; icons are wrapped in a presentational `<span>` and inherit the same treatment
+- Connectors are `aria-hidden="true"`; status and business icons are wrapped in a presentational `<span aria-hidden="true">`
 - Spinner has `motion-reduce:animate-none` for vestibular accessibility
