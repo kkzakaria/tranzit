@@ -291,3 +291,5 @@ export function AuditTimeline({
     </div>
   )
 }
+
+export type { AuditEvent, AuditEventAction, AuditEventStatus } from "@/hooks/use-audit-timeline"
