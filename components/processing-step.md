@@ -51,7 +51,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 |---|---|---|---|
 | `step` | `number` | Yes | Step index (1-based) |
 | `label` | `string` | Yes | Label displayed inside the pill, to the right of the icon. |
-| `icon` | `ReactNode` | No | Icon rendered inside the pill, to the left of the label (e.g. `<HugeiconsIcon icon={...} />`). Shown only in the `waiting` state — replaced by the status icon (spinner, checkmark, ✕) for all other states. When omitted on a `waiting` item, no icon slot is rendered. |
+| `icon` | `ReactNode` | No | Icon rendered inside the pill, to the left of the label (e.g. `<HugeiconsIcon icon={...} />`). Shown only in the `waiting` state — for `active`, `completed`, and `error` states the icon slot always renders and the business icon is replaced by the status icon (spinner, checkmark, ✕). When omitted on a `waiting` item, the icon slot is omitted entirely. |
 | `status` | `StepStatus` | No | Explicit status — overrides derivation from `currentStep`. |
 | `className` | `string` | No | Extra CSS classes merged onto the `<li>` element. |
 | `...li props` | `Omit<React.ComponentProps<"li">, "children">` | — | All standard `<li>` HTML attributes (except `children`) are forwarded to the item element. |
@@ -61,7 +61,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 | Export | Kind | Description |
 |---|---|---|
 | `ProcessingStep` | Component | Root compound component. |
-| `ProcessingStepItem` | Component | The underlying item component. `ProcessingStep.Item` is an alias for this export. |
+| `ProcessingStepItem` | Component | The canonical item component. `ProcessingStep.Item` is a compound-style alias pointing to the same function. |
 | `StepStatus` | Type | `"waiting" \| "active" \| "completed" \| "error"` — useful for typing local state. |
 
 ```tsx
@@ -76,9 +76,9 @@ const [status, setStatus] = React.useState<StepStatus>("waiting")
 | Status | Visual |
 |---|---|
 | `waiting` | Gray pill (`bg-muted`), business icon (if provided), muted text |
-| `active` | Primary pill, spinner replaces business icon, primary-foreground text |
+| `active` | Primary pill (`bg-primary`), spinner replaces business icon, primary-foreground text |
 | `completed` | Green pill (`bg-green-600`), checkmark replaces business icon, white text |
-| `error` | Destructive pill, ✕ replaces business icon, white text |
+| `error` | Destructive pill (`bg-destructive`), ✕ replaces business icon, white text |
 
 ## Status derivation
 
