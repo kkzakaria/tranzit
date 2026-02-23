@@ -34,28 +34,14 @@ function deriveStatus(
 }
 
 // ---------------------------------------------------------------------------
-// Color maps (module-level to avoid recreation on every render)
+// Color map (module-level to avoid recreation on every render)
 // ---------------------------------------------------------------------------
 
-const INDICATOR_COLORS: Record<StepStatus, string> = {
-  waiting: "border-border bg-background text-muted-foreground",
-  active: "border-primary bg-primary text-primary-foreground",
-  completed: "border-green-600 bg-green-600 text-white",
-  error: "border-destructive bg-destructive text-destructive-foreground",
-}
-
-const LABEL_COLORS: Record<StepStatus, string> = {
-  waiting: "text-muted-foreground",
-  active: "text-foreground font-medium",
-  completed: "text-green-700",
-  error: "text-destructive",
-}
-
-const ICON_COLORS: Record<StepStatus, string> = {
-  waiting: "text-muted-foreground",
-  active: "text-primary",
-  completed: "text-green-600",
-  error: "text-destructive",
+const PILL_COLORS: Record<StepStatus, string> = {
+  waiting: "bg-muted text-muted-foreground ring-1 ring-border",
+  active: "bg-primary text-primary-foreground",
+  completed: "bg-green-600 text-white",
+  error: "bg-destructive text-white",
 }
 
 // ---------------------------------------------------------------------------
@@ -84,44 +70,31 @@ function ProcessingStepItem({
       data-slot="processing-step-item"
       data-status={status}
       aria-current={status === "active" ? "step" : undefined}
-      className={cn("flex flex-col items-center gap-1.5", className)}
+      className={cn(
+        "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium transition-colors motion-reduce:transition-none",
+        PILL_COLORS[status],
+        className
+      )}
       {...props}
     >
-      {/* Optional icon above indicator */}
-      <div className={cn("flex h-4 items-center justify-center", ICON_COLORS[status])}>
-        {icon ? (
-          <span className="[&>svg]:size-4">{icon}</span>
-        ) : (
-          <span className="h-4" aria-hidden />
-        )}
-      </div>
-
-      {/* Indicator circle */}
-      <div
-        className={cn(
-          "flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors motion-reduce:transition-none",
-          INDICATOR_COLORS[status]
-        )}
-        aria-hidden
-      >
-        {status === "active" && (
-          <HugeiconsIcon
-            icon={Loading03Icon}
-            className="size-3.5 animate-spin motion-reduce:animate-none"
-          />
-        )}
-        {status === "completed" && (
-          <HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-3.5" />
-        )}
-        {status === "error" && (
-          <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" />
-        )}
-      </div>
-
-      {/* Label */}
-      <span className={cn("text-xs transition-colors motion-reduce:transition-none", LABEL_COLORS[status])}>
-        {label}
-      </span>
+      {(status !== "waiting" || icon) && (
+        <span className="[&>svg]:size-3.5" aria-hidden="true">
+          {status === "active" && (
+            <HugeiconsIcon
+              icon={Loading03Icon}
+              className="animate-spin motion-reduce:animate-none"
+            />
+          )}
+          {status === "completed" && (
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} />
+          )}
+          {status === "error" && (
+            <HugeiconsIcon icon={Cancel01Icon} />
+          )}
+          {status === "waiting" && icon}
+        </span>
+      )}
+      <span>{label}</span>
     </li>
   )
 }
@@ -144,8 +117,8 @@ function ConnectorLine({
 
   return (
     <div
-      aria-hidden
-      className="mt-[35px] flex-1 self-start px-1"
+      aria-hidden="true"
+      className="flex-1 self-center"
     >
       <div
         className={cn(
@@ -181,7 +154,7 @@ const ProcessingStep = function ProcessingStep({
       <ol
         data-slot="processing-step"
         className={cn(
-          "flex w-full items-start justify-between gap-0",
+          "flex w-full items-center",
           className
         )}
         aria-label={ariaLabel}
