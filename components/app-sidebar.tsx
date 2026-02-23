@@ -8,6 +8,7 @@ import {
   Settings01Icon,
   DashboardSquare01Icon,
   UserIcon,
+  Loading03Icon,
 } from "@hugeicons/core-free-icons"
 
 import { usePathname } from "@/lib/navigation"
@@ -66,6 +67,14 @@ export function AppSidebar() {
               className={activeItemClass}
             >
               {t("panelLayout")}
+            </SidebarItem>
+            <SidebarItem
+              href="/demo/processing-step"
+              icon={Loading03Icon}
+              active={pathname === "/demo/processing-step"}
+              className={activeItemClass}
+            >
+              {t("processingStep")}
             </SidebarItem>
           </SidebarGroupContent>
         </SidebarGroup>
