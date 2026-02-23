@@ -2,6 +2,8 @@
 
 Horizontal workflow stepper with four step states: `waiting`, `active`, `completed`, `error`.
 
+> **Client component:** `processing-step.tsx` is marked `"use client"`. Render it inside a Client Component subtree; accessing `ProcessingStep.Item` from a React Server Component will yield `undefined`.
+
 ## Usage
 
 ### Controlled by `currentStep`
@@ -41,6 +43,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 |---|---|---|---|
 | `currentStep` | `number` | — | Active step index (1-based). Drives status derivation for all items. |
 | `aria-label` | `string` | `"Étapes de traitement"` | Accessible label for the step list. Override per locale. |
+| `...ol props` | `React.ComponentProps<"ol">` | No | All standard `<ol>` HTML attributes are forwarded to the root element. |
 
 ### `ProcessingStep.Item`
 
@@ -48,8 +51,25 @@ import { HugeiconsIcon } from "@hugeicons/react"
 |---|---|---|---|
 | `step` | `number` | Yes | Step index (1-based) |
 | `label` | `string` | Yes | Label displayed below the indicator |
-| `icon` | `ReactNode` | No | Icon displayed above the indicator (e.g. `<HugeiconsIcon icon={...} />`) |
+| `icon` | `ReactNode` | No | Icon displayed above the indicator (e.g. `<HugeiconsIcon icon={...} />`). When omitted, an invisible spacer preserves vertical alignment — safe to pass an icon on only some items. |
 | `status` | `StepStatus` | No | Explicit status — overrides derivation from `currentStep`. |
+| `className` | `string` | No | Extra CSS classes merged onto the `<li>` element. |
+| `...li props` | `Omit<React.ComponentProps<"li">, "children">` | No | All standard `<li>` HTML attributes (except `children`) are forwarded to the item element. |
+
+## Exports
+
+| Export | Kind | Description |
+|---|---|---|
+| `ProcessingStep` | Component | Root compound component. |
+| `ProcessingStepItem` | Component | Named re-export of `ProcessingStep.Item` (same component). |
+| `StepStatus` | Type | `"waiting" \| "active" \| "completed" \| "error"` — useful for typing local state. |
+
+```tsx
+import { ProcessingStep } from "@/components/processing-step"
+import type { StepStatus } from "@/components/processing-step"
+
+const [status, setStatus] = React.useState<StepStatus>("waiting")
+```
 
 ## States
 
