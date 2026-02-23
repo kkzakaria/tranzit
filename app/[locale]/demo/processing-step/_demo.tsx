@@ -21,33 +21,28 @@ import { Button } from "@/components/ui/button"
 // ---------------------------------------------------------------------------
 
 interface StepDef {
-  step: number
   label: string
   description: string
-  icon: React.ReactNode
+  icon: React.ReactElement
 }
 
 const STEPS: StepDef[] = [
   {
-    step: 1,
     label: "Upload",
     description: "Envoi du fichier vers le serveur.",
     icon: <HugeiconsIcon icon={UploadIcon} />,
   },
   {
-    step: 2,
     label: "Validation",
     description: "Vérification du format et de l'intégrité du fichier.",
     icon: <HugeiconsIcon icon={CheckmarkCircle02Icon} />,
   },
   {
-    step: 3,
     label: "Traitement",
     description: "Analyse et transformation des données.",
     icon: <HugeiconsIcon icon={Settings01Icon} />,
   },
   {
-    step: 4,
     label: "Terminé",
     description: "Fichier traité avec succès. Résultats disponibles.",
     icon: <HugeiconsIcon icon={CheckmarkCircle02Icon} />,
@@ -70,7 +65,7 @@ function deriveItemStatus(
 }
 
 function getActiveStep(currentStep: number): StepDef | undefined {
-  return STEPS.find((s) => s.step === currentStep)
+  return STEPS[currentStep - 1]
 }
 
 const STATUS_LABELS: Record<StepStatus, string> = {
@@ -138,14 +133,14 @@ export function ProcessingStepDemo() {
 
       {/* Stepper */}
       <div className="w-full max-w-2xl">
-        <ProcessingStep>
-          {STEPS.map(({ step, label, icon }) => (
+        <ProcessingStep currentStep={currentStep}>
+          {STEPS.map(({ label, icon }, index) => (
             <ProcessingStep.Item
-              key={step}
-              step={step}
+              key={index + 1}
+              step={index + 1}
               label={label}
               icon={icon}
-              status={deriveItemStatus(step, currentStep, errorStep)}
+              status={deriveItemStatus(index + 1, currentStep, errorStep)}
             />
           ))}
         </ProcessingStep>
@@ -181,7 +176,7 @@ export function ProcessingStepDemo() {
         <Button
           variant="outline"
           onClick={handlePrev}
-          disabled={currentStep <= 1}
+          disabled={currentStep <= 1 && !hasError}
           aria-label={hasError ? "Réinitialiser l'erreur" : "Étape précédente"}
         >
           <HugeiconsIcon icon={ArrowLeft02Icon} data-icon="inline-start" />

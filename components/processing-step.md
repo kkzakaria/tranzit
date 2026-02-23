@@ -43,7 +43,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 |---|---|---|---|
 | `currentStep` | `number` | — | Active step index (1-based). Drives status derivation for all items. |
 | `aria-label` | `string` | `"Étapes de traitement"` | Accessible label for the step list. Override per locale. |
-| `...ol props` | `React.ComponentProps<"ol">` | No | All standard `<ol>` HTML attributes are forwarded to the root element. |
+| `...ol props` | `React.ComponentProps<"ol">` | — | All standard `<ol>` HTML attributes are forwarded to the root element. |
 
 ### `ProcessingStep.Item`
 
@@ -54,7 +54,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 | `icon` | `ReactNode` | No | Icon displayed above the indicator (e.g. `<HugeiconsIcon icon={...} />`). When omitted, an invisible spacer preserves vertical alignment — safe to pass an icon on only some items. |
 | `status` | `StepStatus` | No | Explicit status — overrides derivation from `currentStep`. |
 | `className` | `string` | No | Extra CSS classes merged onto the `<li>` element. |
-| `...li props` | `Omit<React.ComponentProps<"li">, "children">` | No | All standard `<li>` HTML attributes (except `children`) are forwarded to the item element. |
+| `...li props` | `Omit<React.ComponentProps<"li">, "children">` | — | All standard `<li>` HTML attributes (except `children`) are forwarded to the item element. |
 
 ## Exports
 
@@ -77,7 +77,7 @@ const [status, setStatus] = React.useState<StepStatus>("waiting")
 |---|---|
 | `waiting` | Empty bordered circle, muted text |
 | `active` | Filled primary circle with spinner, medium-weight text |
-| `completed` | Filled primary circle with checkmark |
+| `completed` | Filled primary circle with checkmark, normal-weight text |
 | `error` | Filled destructive circle with ✕, destructive-colored text |
 
 ## Status derivation
@@ -87,6 +87,8 @@ When `currentStep` is set on the root and no explicit `status` is given on an it
 - `step < currentStep` → `completed`
 - `step === currentStep` → `active`
 - `step > currentStep` → `waiting`
+
+If `currentStep` is omitted on the root, all items default to `"waiting"` unless they each receive an explicit `status` prop.
 
 An explicit `status` prop on `ProcessingStep.Item` always takes priority.
 
@@ -100,5 +102,5 @@ The connector between two items is solid (`primary`) when the item to its left i
 
 - Root renders as `<ol>` with `aria-label` (default: `"Étapes de traitement"`, override per locale via the `aria-label` prop)
 - Active item has `aria-current="step"`
-- Decorative elements (indicator circle, icons, connectors) are `aria-hidden`
+- Indicator circle and connectors are `aria-hidden`; icons are wrapped in a presentational `<span>` and inherit the same treatment
 - Spinner has `motion-reduce:animate-none` for vestibular accessibility
