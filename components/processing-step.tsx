@@ -148,13 +148,28 @@ const ProcessingStep = function ProcessingStep({
   ...props
 }: React.ComponentProps<"ol"> & { currentStep?: number }) {
   const childCount = React.Children.count(children)
+  const olRef = React.useRef<HTMLOListElement>(null)
+
+  React.useEffect(() => {
+    const ol = olRef.current
+    if (!ol) return
+    const activeItem = ol.querySelector<HTMLElement>('[aria-current="step"]')
+    if (!activeItem) return
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    activeItem.scrollIntoView({
+      behavior: reducedMotion ? "instant" : "smooth",
+      inline: "center",
+      block: "nearest",
+    })
+  }, [currentStep])
 
   return (
     <ProcessingStepContext.Provider value={{ currentStep }}>
       <ol
+        ref={olRef}
         data-slot="processing-step"
         className={cn(
-          "flex w-full items-center",
+          "flex w-full items-center overflow-x-auto",
           className
         )}
         aria-label={ariaLabel}
