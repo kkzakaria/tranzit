@@ -70,10 +70,12 @@ function groupEventsByDate(
   events: AuditEvent[]
 ): Array<{ dateLabel: string; events: AuditEvent[] }> {
   const map = new Map<string, AuditEvent[]>()
+  // Preserves Map insertion order — assumes events arrive in chronological order
   for (const event of events) {
     const key = new Date(event.timestamp).toDateString()
-    if (!map.has(key)) map.set(key, [])
-    map.get(key)!.push(event)
+    const bucket = map.get(key) ?? []
+    bucket.push(event)
+    map.set(key, bucket)
   }
   return Array.from(map.entries()).map(([, evts]) => ({
     dateLabel: formatDateHeader(evts[0].timestamp),
@@ -94,6 +96,7 @@ function AuditTimelineItem({
 }) {
   const [relTime, setRelTime] = React.useState<string>("")
   const [expanded, setExpanded] = React.useState(false)
+  const detailsId = React.useId()
 
   React.useEffect(() => {
     setRelTime(formatRelativeTime(event.timestamp))
@@ -109,7 +112,7 @@ function AuditTimelineItem({
             STATUS_DOT[event.status]
           )}
         />
-        {!isLast && <div className="w-px flex-1 bg-border mt-1 mb-0" />}
+        {!isLast && <div className="w-px flex-1 bg-border mt-1" />}
       </div>
 
       {/* Content */}
@@ -149,11 +152,12 @@ function AuditTimelineItem({
               onClick={() => setExpanded((v) => !v)}
               className="text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
               aria-expanded={expanded}
+              aria-controls={detailsId}
             >
               {expanded ? "Masquer les détails" : "Voir les détails"}
             </button>
             {expanded && (
-              <pre className="mt-2 text-xs bg-muted rounded-md p-3 overflow-auto max-h-48 font-mono">
+              <pre id={detailsId} className="mt-2 text-xs bg-muted rounded-md p-3 overflow-auto max-h-48 font-mono">
                 {JSON.stringify(event.metadata, null, 2)}
               </pre>
             )}
@@ -171,6 +175,7 @@ function AuditTimelineItem({
 function DateGroupHeader({ label }: { label: string }) {
   return (
     <li
+      role="presentation"
       data-slot="audit-timeline-date-header"
       className="flex items-center gap-3 py-2"
       aria-hidden="true"
@@ -233,7 +238,10 @@ export function AuditTimeline({
       />
     ))
 
-  const grouped = groupByDate ? groupEventsByDate(events) : null
+  const grouped = React.useMemo(
+    () => (groupByDate ? groupEventsByDate(events) : null),
+    [events, groupByDate]
+  )
 
   return (
     <div
@@ -243,34 +251,42 @@ export function AuditTimeline({
     >
       <ol aria-label={ariaLabel}>
         {grouped
-          ? grouped.map(({ dateLabel, events: group }, groupIdx) => {
-              const baseIndex = grouped
-                .slice(0, groupIdx)
-                .reduce((acc, g) => acc + g.events.length, 0)
-              return (
-                <React.Fragment key={dateLabel}>
-                  <DateGroupHeader label={dateLabel} />
-                  {renderItems(group, baseIndex, events.length)}
-                </React.Fragment>
-              )
-            })
+          ? grouped.map(({ dateLabel, events: group }, groupIdx) => (
+              <React.Fragment key={dateLabel}>
+                <DateGroupHeader label={dateLabel} />
+                {group.map((event, idx) => (
+                  <AuditTimelineItem
+                    key={event.id}
+                    event={event}
+                    isLast={!hasMore && groupIdx === grouped.length - 1 && idx === group.length - 1}
+                  />
+                ))}
+              </React.Fragment>
+            ))
           : renderItems(events, 0, events.length)}
       </ol>
 
       {/* Infinite scroll sentinel */}
       {hasMore && (
-        <div
-          ref={sentinelRef}
-          aria-hidden="true"
-          className="flex justify-center py-4"
-        >
+        <>
+          <div
+            ref={sentinelRef}
+            aria-hidden="true"
+            className="flex justify-center py-4"
+          >
+            {loading && (
+              <HugeiconsIcon
+                icon={Loading03Icon}
+                className="size-5 animate-spin text-muted-foreground motion-reduce:animate-none"
+              />
+            )}
+          </div>
           {loading && (
-            <HugeiconsIcon
-              icon={Loading03Icon}
-              className="size-5 animate-spin text-muted-foreground motion-reduce:animate-none"
-            />
+            <span role="status" className="sr-only">
+              Chargement en cours…
+            </span>
           )}
-        </div>
+        </>
       )}
     </div>
   )
