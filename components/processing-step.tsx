@@ -40,21 +40,21 @@ function deriveStatus(
 const INDICATOR_COLORS: Record<StepStatus, string> = {
   waiting: "border-border bg-background text-muted-foreground",
   active: "border-primary bg-primary text-primary-foreground",
-  completed: "border-primary bg-primary text-primary-foreground",
+  completed: "border-green-600 bg-green-600 text-white",
   error: "border-destructive bg-destructive text-destructive-foreground",
 }
 
 const LABEL_COLORS: Record<StepStatus, string> = {
   waiting: "text-muted-foreground",
   active: "text-foreground font-medium",
-  completed: "text-foreground",
+  completed: "text-green-700",
   error: "text-destructive",
 }
 
 const ICON_COLORS: Record<StepStatus, string> = {
   waiting: "text-muted-foreground",
   active: "text-primary",
-  completed: "text-primary",
+  completed: "text-green-600",
   error: "text-destructive",
 }
 
@@ -150,7 +150,7 @@ function ConnectorLine({
       <div
         className={cn(
           "h-0 w-full border-t-2 transition-colors motion-reduce:transition-none",
-          isCompleted ? "border-primary" : "border-dashed border-border"
+          isCompleted ? "border-green-600" : "border-dashed border-border"
         )}
       />
     </div>
