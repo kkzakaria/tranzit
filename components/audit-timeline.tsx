@@ -1,18 +1,13 @@
-// components/audit-timeline.tsx
 // Documentation & usage examples: ./audit-timeline.md
 
 "use client"
 
-import * as React from "react"
+import { type ComponentProps, Fragment, useEffect, useId, useMemo, useRef, useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Loading03Icon } from "@hugeicons/core-free-icons"
 
 import { cn } from "@/lib/utils"
 import type { AuditEvent, AuditEventAction, AuditEventStatus } from "@/hooks/use-audit-timeline"
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
 
 const ACTION_LABELS: Record<AuditEventAction, string> = {
   create: "Création",
@@ -40,11 +35,6 @@ const STATUS_BADGE: Record<AuditEventStatus, string> = {
   info: "bg-primary/10 text-primary",
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-// Fix 5: guard against invalid timestamps
 function formatRelativeTime(timestamp: Date | string): string {
   const ms = new Date(timestamp).getTime()
   if (Number.isNaN(ms)) return "date invalide"
@@ -73,7 +63,6 @@ function groupEventsByDate(
   events: AuditEvent[]
 ): Array<{ dateLabel: string; events: AuditEvent[] }> {
   const map = new Map<string, AuditEvent[]>()
-  // Preserves Map insertion order — assumes events arrive in chronological order
   for (const event of events) {
     const key = new Date(event.timestamp).toDateString()
     const bucket = map.get(key) ?? []
@@ -86,9 +75,13 @@ function groupEventsByDate(
   }))
 }
 
-// ---------------------------------------------------------------------------
-// AuditTimelineItem (internal)
-// ---------------------------------------------------------------------------
+function formatMetadata(metadata: Record<string, unknown>): string {
+  try {
+    return JSON.stringify(metadata, null, 2)
+  } catch {
+    return "[Impossible d'afficher les métadonnées : format non sérialisable]"
+  }
+}
 
 function AuditTimelineItem({
   event,
@@ -97,13 +90,9 @@ function AuditTimelineItem({
   event: AuditEvent
   isLast: boolean
 }) {
-  const [relTime, setRelTime] = React.useState<string>("")
-  const [expanded, setExpanded] = React.useState(false)
-  const detailsId = React.useId()
-
-  React.useEffect(() => {
-    setRelTime(formatRelativeTime(event.timestamp))
-  }, [event.timestamp])
+  const [expanded, setExpanded] = useState(false)
+  const detailsId = useId()
+  const relTime = formatRelativeTime(event.timestamp)
 
   return (
     <li data-slot="audit-timeline-item" className="flex gap-3">
@@ -112,7 +101,6 @@ function AuditTimelineItem({
         <div
           className={cn(
             "size-2.5 rounded-full mt-1.5 shrink-0 ring-2 ring-background",
-            // Fix 7: fallback for unknown status
             STATUS_DOT[event.status] ?? "bg-muted"
           )}
         />
@@ -126,11 +114,9 @@ function AuditTimelineItem({
           <span
             className={cn(
               "text-xs font-medium px-2 py-0.5 rounded-full shrink-0",
-              // Fix 7: fallback for unknown status
               STATUS_BADGE[event.status] ?? "bg-muted text-muted-foreground"
             )}
           >
-            {/* Fix 7: fallback for unknown action */}
             {ACTION_LABELS[event.action] ?? event.action}
           </span>
           <span className="text-sm font-medium truncate">{event.actor.name}</span>
@@ -139,13 +125,12 @@ function AuditTimelineItem({
               ({event.actor.role})
             </span>
           )}
-          {/* Fix 9: suppressHydrationWarning on <time> */}
           <time
             dateTime={new Date(event.timestamp).toISOString()}
             className="text-xs text-muted-foreground ml-auto shrink-0"
             suppressHydrationWarning
           >
-            {relTime || new Date(event.timestamp).toLocaleString("fr-FR")}
+            {relTime}
           </time>
         </div>
 
@@ -155,7 +140,6 @@ function AuditTimelineItem({
         {/* Expandable metadata */}
         {event.metadata && (
           <div className="mt-1.5">
-            {/* Fix 3: aria-controls only present when expanded */}
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
@@ -167,14 +151,7 @@ function AuditTimelineItem({
             </button>
             {expanded && (
               <pre id={detailsId} className="mt-2 text-xs bg-muted rounded-md p-3 overflow-auto max-h-48 font-mono">
-                {/* Fix 1: JSON.stringify with try-catch */}
-                {(() => {
-                  try {
-                    return JSON.stringify(event.metadata, null, 2)
-                  } catch {
-                    return "[Impossible d'afficher les métadonnées : format non sérialisable]"
-                  }
-                })()}
+                {formatMetadata(event.metadata)}
               </pre>
             )}
           </div>
@@ -184,11 +161,6 @@ function AuditTimelineItem({
   )
 }
 
-// ---------------------------------------------------------------------------
-// DateGroupHeader (internal)
-// ---------------------------------------------------------------------------
-
-// Fix 4: role="separator" + aria-label instead of aria-hidden="true" on <li>
 function DateGroupHeader({ label }: { label: string }) {
   return (
     <li
@@ -205,11 +177,7 @@ function DateGroupHeader({ label }: { label: string }) {
   )
 }
 
-// ---------------------------------------------------------------------------
-// AuditTimeline (root)
-// ---------------------------------------------------------------------------
-
-export interface AuditTimelineProps extends React.ComponentProps<"div"> {
+export interface AuditTimelineProps extends ComponentProps<"div"> {
   events: AuditEvent[]
   onLoadMore?: () => void
   hasMore?: boolean
@@ -228,10 +196,9 @@ export function AuditTimeline({
   "aria-label": ariaLabel = "Historique d'audit",
   ...props
 }: AuditTimelineProps) {
-  const sentinelRef = React.useRef<HTMLDivElement>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
-  // Fix 2: IntersectionObserver browser support guard
-  React.useEffect(() => {
+  useEffect(() => {
     if (!onLoadMore || !hasMore || loading) return
     if (typeof IntersectionObserver !== "function") return
     const sentinel = sentinelRef.current
@@ -248,16 +215,7 @@ export function AuditTimeline({
     return () => observer.disconnect()
   }, [onLoadMore, hasMore, loading])
 
-  const renderItems = (items: AuditEvent[]) =>
-    items.map((event, idx) => (
-      <AuditTimelineItem
-        key={event.id}
-        event={event}
-        isLast={!hasMore && idx === items.length - 1}
-      />
-    ))
-
-  const grouped = React.useMemo(
+  const grouped = useMemo(
     () => (groupByDate ? groupEventsByDate(events) : null),
     [events, groupByDate]
   )
@@ -271,7 +229,7 @@ export function AuditTimeline({
       <ol aria-label={ariaLabel}>
         {grouped
           ? grouped.map(({ dateLabel, events: group }, groupIdx) => (
-              <React.Fragment key={dateLabel}>
+              <Fragment key={dateLabel}>
                 <DateGroupHeader label={dateLabel} />
                 {group.map((event, idx) => (
                   <AuditTimelineItem
@@ -280,9 +238,15 @@ export function AuditTimeline({
                     isLast={!hasMore && groupIdx === grouped.length - 1 && idx === group.length - 1}
                   />
                 ))}
-              </React.Fragment>
+              </Fragment>
             ))
-          : renderItems(events)}
+          : events.map((event, idx) => (
+              <AuditTimelineItem
+                key={event.id}
+                event={event}
+                isLast={!hasMore && idx === events.length - 1}
+              />
+            ))}
       </ol>
 
       {/* Infinite scroll sentinel */}

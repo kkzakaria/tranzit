@@ -1,12 +1,8 @@
 "use client"
 
-import React, { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { AuditTimeline } from "@/components/audit-timeline"
 import type { AuditEvent } from "@/hooks/use-audit-timeline"
-
-// ---------------------------------------------------------------------------
-// Mock data (20 events, most recent first)
-// ---------------------------------------------------------------------------
 
 const now = Date.now()
 const min = 60_000
@@ -189,12 +185,7 @@ const ALL_EVENTS: AuditEvent[] = [
   },
 ]
 
-// Events are stored most-recent-first; display reverses so oldest is at top.
 const PAGE_SIZE = 10
-
-// ---------------------------------------------------------------------------
-// AuditTimelineDemo
-// ---------------------------------------------------------------------------
 
 export function AuditTimelineDemo() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
@@ -204,7 +195,6 @@ export function AuditTimelineDemo() {
   const visible = ALL_EVENTS.slice(0, visibleCount).reverse()
   const hasMore = visibleCount < ALL_EVENTS.length
 
-  // Fix 6: simulate async fetch with cleanup on unmount
   useEffect(() => {
     if (!loading) return
     const id = setTimeout(() => {
