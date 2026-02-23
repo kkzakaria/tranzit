@@ -9,10 +9,6 @@ import {
   Settings01Icon,
   UploadIcon,
   Cancel01Icon,
-  DatabaseIcon,
-  LockIcon,
-  Mail01Icon,
-  FileValidationIcon,
 } from "@hugeicons/core-free-icons"
 
 import { cn } from "@/lib/utils"
@@ -37,39 +33,14 @@ const STEPS: StepDef[] = [
     icon: <HugeiconsIcon icon={UploadIcon} />,
   },
   {
-    label: "Validation format",
+    label: "Validation",
     description: "Vérification du format et de l'intégrité du fichier.",
     icon: <HugeiconsIcon icon={CheckmarkCircle02Icon} />,
   },
   {
-    label: "Analyse",
-    description: "Analyse et extraction des données brutes.",
-    icon: <HugeiconsIcon icon={Settings01Icon} />,
-  },
-  {
-    label: "Sécurité",
-    description: "Contrôle antivirus et vérification des permissions.",
-    icon: <HugeiconsIcon icon={LockIcon} />,
-  },
-  {
-    label: "Indexation",
-    description: "Indexation des données dans la base.",
-    icon: <HugeiconsIcon icon={DatabaseIcon} />,
-  },
-  {
-    label: "Vérification",
-    description: "Contrôle de cohérence des données indexées.",
-    icon: <HugeiconsIcon icon={FileValidationIcon} />,
-  },
-  {
     label: "Traitement",
-    description: "Transformation et enrichissement des données.",
+    description: "Analyse et transformation des données.",
     icon: <HugeiconsIcon icon={Settings01Icon} />,
-  },
-  {
-    label: "Notification",
-    description: "Envoi du rapport de traitement par e-mail.",
-    icon: <HugeiconsIcon icon={Mail01Icon} />,
   },
   {
     label: "Terminé",
