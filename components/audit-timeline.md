@@ -10,7 +10,7 @@ Vertical chronological audit trail component. Displays a list of past events wit
 
 ```tsx
 import { AuditTimeline } from "@/components/audit-timeline"
-import type { AuditEvent } from "@/hooks/use-audit-timeline"
+import type { AuditEvent } from "@/components/audit-timeline"
 
 const events: AuditEvent[] = [
   {

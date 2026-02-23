@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import React, { useState, useCallback, useEffect } from "react"
 import { AuditTimeline } from "@/components/audit-timeline"
 import type { AuditEvent } from "@/hooks/use-audit-timeline"
 
@@ -204,13 +204,19 @@ export function AuditTimelineDemo() {
   const visible = ALL_EVENTS.slice(0, visibleCount).reverse()
   const hasMore = visibleCount < ALL_EVENTS.length
 
-  const handleLoadMore = useCallback(() => {
-    if (loading || !hasMore) return
-    setLoading(true)
-    setTimeout(() => {
+  // Fix 6: simulate async fetch with cleanup on unmount
+  useEffect(() => {
+    if (!loading) return
+    const id = setTimeout(() => {
       setVisibleCount((c) => Math.min(c + PAGE_SIZE, ALL_EVENTS.length))
       setLoading(false)
     }, 800)
+    return () => clearTimeout(id)
+  }, [loading])
+
+  const handleLoadMore = useCallback(() => {
+    if (loading || !hasMore) return
+    setLoading(true)
   }, [loading, hasMore])
 
   return (

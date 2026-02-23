@@ -44,8 +44,11 @@ const STATUS_BADGE: Record<AuditEventStatus, string> = {
 // Helpers
 // ---------------------------------------------------------------------------
 
+// Fix 5: guard against invalid timestamps
 function formatRelativeTime(timestamp: Date | string): string {
-  const diff = Date.now() - new Date(timestamp).getTime()
+  const ms = new Date(timestamp).getTime()
+  if (Number.isNaN(ms)) return "date invalide"
+  const diff = Date.now() - ms
   if (diff < 60_000) return "il y a quelques secondes"
   if (diff < 3_600_000) return `il y a ${Math.floor(diff / 60_000)} min`
   if (diff < 86_400_000) return `il y a ${Math.floor(diff / 3_600_000)} h`
@@ -109,7 +112,8 @@ function AuditTimelineItem({
         <div
           className={cn(
             "size-2.5 rounded-full mt-1.5 shrink-0 ring-2 ring-background",
-            STATUS_DOT[event.status]
+            // Fix 7: fallback for unknown status
+            STATUS_DOT[event.status] ?? "bg-muted"
           )}
         />
         {!isLast && <div className="w-px flex-1 bg-border mt-1" />}
@@ -122,10 +126,12 @@ function AuditTimelineItem({
           <span
             className={cn(
               "text-xs font-medium px-2 py-0.5 rounded-full shrink-0",
-              STATUS_BADGE[event.status]
+              // Fix 7: fallback for unknown status
+              STATUS_BADGE[event.status] ?? "bg-muted text-muted-foreground"
             )}
           >
-            {ACTION_LABELS[event.action]}
+            {/* Fix 7: fallback for unknown action */}
+            {ACTION_LABELS[event.action] ?? event.action}
           </span>
           <span className="text-sm font-medium truncate">{event.actor.name}</span>
           {event.actor.role && (
@@ -133,9 +139,11 @@ function AuditTimelineItem({
               ({event.actor.role})
             </span>
           )}
+          {/* Fix 9: suppressHydrationWarning on <time> */}
           <time
             dateTime={new Date(event.timestamp).toISOString()}
             className="text-xs text-muted-foreground ml-auto shrink-0"
+            suppressHydrationWarning
           >
             {relTime || new Date(event.timestamp).toLocaleString("fr-FR")}
           </time>
@@ -147,18 +155,26 @@ function AuditTimelineItem({
         {/* Expandable metadata */}
         {event.metadata && (
           <div className="mt-1.5">
+            {/* Fix 3: aria-controls only present when expanded */}
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
               className="text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
               aria-expanded={expanded}
-              aria-controls={detailsId}
+              aria-controls={expanded ? detailsId : undefined}
             >
               {expanded ? "Masquer les détails" : "Voir les détails"}
             </button>
             {expanded && (
               <pre id={detailsId} className="mt-2 text-xs bg-muted rounded-md p-3 overflow-auto max-h-48 font-mono">
-                {JSON.stringify(event.metadata, null, 2)}
+                {/* Fix 1: JSON.stringify with try-catch */}
+                {(() => {
+                  try {
+                    return JSON.stringify(event.metadata, null, 2)
+                  } catch {
+                    return "[Impossible d'afficher les métadonnées : format non sérialisable]"
+                  }
+                })()}
               </pre>
             )}
           </div>
@@ -172,15 +188,17 @@ function AuditTimelineItem({
 // DateGroupHeader (internal)
 // ---------------------------------------------------------------------------
 
+// Fix 4: role="separator" + aria-label instead of aria-hidden="true" on <li>
 function DateGroupHeader({ label }: { label: string }) {
   return (
     <li
+      role="separator"
       data-slot="audit-timeline-date-header"
       className="sticky top-0 z-10 flex items-center gap-3 bg-background py-2"
-      aria-hidden="true"
+      aria-label={label}
     >
-      <div className="w-2.5 shrink-0" />
-      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+      <div className="w-2.5 shrink-0" aria-hidden="true" />
+      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide" aria-hidden="true">
         {label}
       </span>
     </li>
@@ -212,8 +230,10 @@ export function AuditTimeline({
 }: AuditTimelineProps) {
   const sentinelRef = React.useRef<HTMLDivElement>(null)
 
+  // Fix 2: IntersectionObserver browser support guard
   React.useEffect(() => {
     if (!onLoadMore || !hasMore || loading) return
+    if (typeof IntersectionObserver !== "function") return
     const sentinel = sentinelRef.current
     if (!sentinel) return
 
