@@ -52,7 +52,7 @@ const events: AuditEvent[] = [
 | `onLoadMore` | `() => void` | — | Called when the scroll sentinel enters the viewport |
 | `hasMore` | `boolean` | `false` | Renders the sentinel; hides it when false |
 | `loading` | `boolean` | `false` | Shows a spinner inside the sentinel |
-| `groupByDate` | `boolean` | `false` | Groups events under sticky date headers |
+| `groupByDate` | `boolean` | `false` | Groups events under date section headers (sticky when inside a scroll container) |
 | `aria-label` | `string` | `"Historique d'audit"` | Accessible label for the `<ol>` |
 | `className` | `string` | — | Extra CSS classes on the root `<div>` |
 
@@ -94,7 +94,7 @@ interface AuditEvent {
 - Root renders as `<div>` containing an `<ol aria-label>`
 - Each event is an `<li>`
 - Dots and connectors are `aria-hidden="true"`
-- Date group headers have `role="presentation"` and `aria-hidden="true"`
+- Date group headers have `aria-hidden="true"`
 - Metadata expand button has `aria-expanded` and `aria-controls`
 - Sentinel div is `aria-hidden="true"`; loading state announced via `role="status"` sr-only span
 - Spinner has `motion-reduce:animate-none`

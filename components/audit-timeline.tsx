@@ -175,9 +175,8 @@ function AuditTimelineItem({
 function DateGroupHeader({ label }: { label: string }) {
   return (
     <li
-      role="presentation"
       data-slot="audit-timeline-date-header"
-      className="flex items-center gap-3 py-2"
+      className="sticky top-0 z-10 flex items-center gap-3 bg-background py-2"
       aria-hidden="true"
     >
       <div className="w-2.5 shrink-0" />
@@ -214,7 +213,7 @@ export function AuditTimeline({
   const sentinelRef = React.useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
-    if (!onLoadMore || !hasMore) return
+    if (!onLoadMore || !hasMore || loading) return
     const sentinel = sentinelRef.current
     if (!sentinel) return
 
@@ -227,14 +226,14 @@ export function AuditTimeline({
 
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [onLoadMore, hasMore])
+  }, [onLoadMore, hasMore, loading])
 
-  const renderItems = (items: AuditEvent[], baseIndex: number, totalLength: number) =>
+  const renderItems = (items: AuditEvent[]) =>
     items.map((event, idx) => (
       <AuditTimelineItem
         key={event.id}
         event={event}
-        isLast={!hasMore && baseIndex + idx === totalLength - 1}
+        isLast={!hasMore && idx === items.length - 1}
       />
     ))
 
@@ -263,7 +262,7 @@ export function AuditTimeline({
                 ))}
               </React.Fragment>
             ))
-          : renderItems(events, 0, events.length)}
+          : renderItems(events)}
       </ol>
 
       {/* Infinite scroll sentinel */}

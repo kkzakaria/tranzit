@@ -1,5 +1,4 @@
 // hooks/use-audit-timeline.ts
-"use client"
 
 export type AuditEventAction =
   | "create"
