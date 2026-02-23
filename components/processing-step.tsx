@@ -165,11 +165,12 @@ const ProcessingStep = function ProcessingStep({
 
   return (
     <ProcessingStepContext.Provider value={{ currentStep }}>
+      <div className="w-full overflow-x-auto pb-2">
       <ol
         ref={olRef}
         data-slot="processing-step"
         className={cn(
-          "flex w-full items-center overflow-x-auto",
+          "flex w-max min-w-full items-center",
           className
         )}
         aria-label={ariaLabel}
@@ -192,6 +193,7 @@ const ProcessingStep = function ProcessingStep({
           )
         })}
       </ol>
+      </div>
     </ProcessingStepContext.Provider>
   )
 } as ProcessingStepComponent
