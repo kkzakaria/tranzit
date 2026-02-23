@@ -34,7 +34,7 @@ function deriveStatus(
 }
 
 // ---------------------------------------------------------------------------
-// Fix 3: Module-level color map constants (avoid recreation on every render)
+// Color maps (module-level to avoid recreation on every render)
 // ---------------------------------------------------------------------------
 
 const INDICATOR_COLORS: Record<StepStatus, string> = {
@@ -147,7 +147,6 @@ function ConnectorLine({
       aria-hidden
       className="mt-[1.375rem] flex-1 self-start px-1"
     >
-      {/* Fix 4: Unified border-based approach for both completed and pending states */}
       <div
         className={cn(
           "h-0 w-full border-t-2 transition-colors motion-reduce:transition-none",
@@ -168,7 +167,6 @@ type ProcessingStepComponent = React.FC<
   Item: typeof ProcessingStepItem
 }
 
-// Fix 1: Destructure aria-label with French default instead of hardcoding it
 const ProcessingStep = function ProcessingStep({
   currentStep,
   className,
@@ -176,6 +174,8 @@ const ProcessingStep = function ProcessingStep({
   "aria-label": ariaLabel = "Étapes de traitement",
   ...props
 }: React.ComponentProps<"ol"> & { currentStep?: number }) {
+  const childCount = React.Children.count(children)
+
   return (
     <ProcessingStepContext.Provider value={{ currentStep }}>
       <ol
@@ -188,10 +188,7 @@ const ProcessingStep = function ProcessingStep({
         {...props}
       >
         {React.Children.map(children, (child, index) => {
-          const isLast =
-            index === React.Children.count(children) - 1
-
-          // Fix 2: Use step-based key instead of index key
+          const isLast = index === childCount - 1
           const stepKey =
             React.isValidElement(child) && typeof (child.props as { step?: number }).step === "number"
               ? (child.props as { step: number }).step
