@@ -34,6 +34,31 @@ function deriveStatus(
 }
 
 // ---------------------------------------------------------------------------
+// Fix 3: Module-level color map constants (avoid recreation on every render)
+// ---------------------------------------------------------------------------
+
+const INDICATOR_COLORS: Record<StepStatus, string> = {
+  waiting: "border-border bg-background text-muted-foreground",
+  active: "border-primary bg-primary text-primary-foreground",
+  completed: "border-primary bg-primary text-primary-foreground",
+  error: "border-destructive bg-destructive text-destructive-foreground",
+}
+
+const LABEL_COLORS: Record<StepStatus, string> = {
+  waiting: "text-muted-foreground",
+  active: "text-foreground font-medium",
+  completed: "text-foreground",
+  error: "text-destructive",
+}
+
+const ICON_COLORS: Record<StepStatus, string> = {
+  waiting: "text-muted-foreground",
+  active: "text-primary",
+  completed: "text-primary",
+  error: "text-destructive",
+}
+
+// ---------------------------------------------------------------------------
 // ProcessingStep.Item
 // ---------------------------------------------------------------------------
 
@@ -54,27 +79,6 @@ function ProcessingStepItem({
   const { currentStep } = useProcessingStep()
   const status = deriveStatus(step, currentStep, statusProp)
 
-  const indicatorColors: Record<StepStatus, string> = {
-    waiting: "border-border bg-background text-muted-foreground",
-    active: "border-primary bg-primary text-primary-foreground",
-    completed: "border-primary bg-primary text-primary-foreground",
-    error: "border-destructive bg-destructive text-destructive-foreground",
-  }
-
-  const labelColors: Record<StepStatus, string> = {
-    waiting: "text-muted-foreground",
-    active: "text-foreground font-medium",
-    completed: "text-foreground",
-    error: "text-destructive",
-  }
-
-  const iconColors: Record<StepStatus, string> = {
-    waiting: "text-muted-foreground",
-    active: "text-primary",
-    completed: "text-primary",
-    error: "text-destructive",
-  }
-
   return (
     <li
       data-slot="processing-step-item"
@@ -84,7 +88,7 @@ function ProcessingStepItem({
       {...props}
     >
       {/* Optional icon above indicator */}
-      <div className={cn("flex h-4 items-center justify-center", iconColors[status])}>
+      <div className={cn("flex h-4 items-center justify-center", ICON_COLORS[status])}>
         {icon ? (
           <span className="[&>svg]:size-4">{icon}</span>
         ) : (
@@ -96,7 +100,7 @@ function ProcessingStepItem({
       <div
         className={cn(
           "flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors motion-reduce:transition-none",
-          indicatorColors[status]
+          INDICATOR_COLORS[status]
         )}
         aria-hidden
       >
@@ -115,7 +119,7 @@ function ProcessingStepItem({
       </div>
 
       {/* Label */}
-      <span className={cn("text-xs transition-colors motion-reduce:transition-none", labelColors[status])}>
+      <span className={cn("text-xs transition-colors motion-reduce:transition-none", LABEL_COLORS[status])}>
         {label}
       </span>
     </li>
@@ -143,12 +147,11 @@ function ConnectorLine({
       aria-hidden
       className="mt-[1.375rem] flex-1 self-start px-1"
     >
+      {/* Fix 4: Unified border-based approach for both completed and pending states */}
       <div
         className={cn(
-          "h-0.5 w-full transition-colors motion-reduce:transition-none",
-          isCompleted
-            ? "bg-primary"
-            : "border-t-2 border-dashed border-border bg-transparent"
+          "h-0 w-full border-t-2 transition-colors motion-reduce:transition-none",
+          isCompleted ? "border-primary" : "border-dashed border-border"
         )}
       />
     </div>
@@ -165,10 +168,12 @@ type ProcessingStepComponent = React.FC<
   Item: typeof ProcessingStepItem
 }
 
+// Fix 1: Destructure aria-label with French default instead of hardcoding it
 const ProcessingStep = function ProcessingStep({
   currentStep,
   className,
   children,
+  "aria-label": ariaLabel = "Étapes de traitement",
   ...props
 }: React.ComponentProps<"ol"> & { currentStep?: number }) {
   return (
@@ -179,15 +184,21 @@ const ProcessingStep = function ProcessingStep({
           "flex w-full items-start justify-between gap-0",
           className
         )}
-        aria-label="Étapes de traitement"
+        aria-label={ariaLabel}
         {...props}
       >
         {React.Children.map(children, (child, index) => {
           const isLast =
             index === React.Children.count(children) - 1
 
+          // Fix 2: Use step-based key instead of index key
+          const stepKey =
+            React.isValidElement(child) && typeof (child.props as { step?: number }).step === "number"
+              ? (child.props as { step: number }).step
+              : index
+
           return (
-            <React.Fragment key={index}>
+            <React.Fragment key={stepKey}>
               {child}
               {!isLast && (
                 <ConnectorLine sourceIndex={index} currentStep={currentStep} />
