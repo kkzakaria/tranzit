@@ -117,8 +117,8 @@ function ConnectorLine({
 
   return (
     <div
-      aria-hidden
-      className="mt-[35px] flex-1 self-start px-1"
+      aria-hidden="true"
+      className="flex-1 self-center px-1"
     >
       <div
         className={cn(
@@ -154,7 +154,7 @@ const ProcessingStep = function ProcessingStep({
       <ol
         data-slot="processing-step"
         className={cn(
-          "flex w-full items-start justify-between",
+          "flex w-full items-center",
           className
         )}
         aria-label={ariaLabel}
