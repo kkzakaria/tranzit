@@ -145,7 +145,7 @@ function ConnectorLine({
   return (
     <div
       aria-hidden
-      className="mt-[1.375rem] flex-1 self-start px-1"
+      className="mt-[35px] flex-1 self-start px-1"
     >
       <div
         className={cn(
