@@ -165,7 +165,7 @@ const ProcessingStep = function ProcessingStep({
 
   return (
     <ProcessingStepContext.Provider value={{ currentStep }}>
-      <div className="w-full overflow-x-auto pb-2">
+      <div className="w-full overflow-x-auto pt-1 pb-3">
       <ol
         ref={olRef}
         data-slot="processing-step"
