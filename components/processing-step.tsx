@@ -38,7 +38,7 @@ function deriveStatus(
 // ---------------------------------------------------------------------------
 
 const PILL_COLORS: Record<StepStatus, string> = {
-  waiting: "bg-muted text-muted-foreground",
+  waiting: "bg-muted text-muted-foreground ring-1 ring-border",
   active: "bg-primary text-primary-foreground",
   completed: "bg-green-600 text-white",
   error: "bg-destructive text-white",
