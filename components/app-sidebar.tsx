@@ -9,6 +9,7 @@ import {
   DashboardSquare01Icon,
   UserIcon,
   Loading03Icon,
+  TimelineIcon,
 } from "@hugeicons/core-free-icons"
 
 import { usePathname } from "@/lib/navigation"
@@ -75,6 +76,14 @@ export function AppSidebar() {
               className={activeItemClass}
             >
               {t("processingStep")}
+            </SidebarItem>
+            <SidebarItem
+              href="/demo/audit-timeline"
+              icon={TimelineIcon}
+              active={pathname === "/demo/audit-timeline"}
+              className={activeItemClass}
+            >
+              {t("auditTimeline")}
             </SidebarItem>
           </SidebarGroupContent>
         </SidebarGroup>
