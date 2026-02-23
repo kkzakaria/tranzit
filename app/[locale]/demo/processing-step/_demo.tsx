@@ -182,6 +182,7 @@ export function ProcessingStepDemo() {
           variant="outline"
           onClick={handlePrev}
           disabled={currentStep <= 1}
+          aria-label={hasError ? "Réinitialiser l'erreur" : "Étape précédente"}
         >
           <HugeiconsIcon icon={ArrowLeft02Icon} data-icon="inline-start" />
           Précédent
