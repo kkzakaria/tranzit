@@ -2,11 +2,13 @@
   "name": "tranzit",
   "version": "0.1.0",
   "private": true,
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "next dev --port 34000",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "dev":      "next dev --port 34000",
+    "dev:api":  "bun run --cwd apps/api dev",
+    "build":    "next build",
+    "start":    "next start",
+    "lint":     "eslint"
   },
   "dependencies": {
     "@base-ui/react": "^1.1.0",
@@ -32,12 +34,6 @@
     "tailwindcss": "^4",
     "typescript": "^5"
   },
-  "ignoreScripts": [
-    "sharp",
-    "unrs-resolver"
-  ],
-  "trustedDependencies": [
-    "sharp",
-    "unrs-resolver"
-  ]
+  "ignoreScripts": ["sharp", "unrs-resolver"],
+  "trustedDependencies": ["sharp", "unrs-resolver"]
 }
