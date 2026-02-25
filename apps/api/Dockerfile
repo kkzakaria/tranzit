@@ -29,6 +29,6 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps/api ./apps/api
 
-EXPOSE 3001
+EXPOSE 34001
 
 CMD ["bun", "run", "apps/api/src/index.ts"]

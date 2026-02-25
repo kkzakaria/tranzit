@@ -43,7 +43,7 @@ app.route('/api/v1/documents', documentsRouter)
 
 export default app
 
-const port = Number(process.env.PORT ?? 3001)
+const port = Number(process.env.PORT ?? 34001)
 console.log(`API running on http://localhost:${port}`)
 
 Bun.serve({ fetch: app.fetch, port })
