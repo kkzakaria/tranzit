@@ -1,5 +1,4 @@
 import type { Context, Next } from 'hono'
-import { auth } from '../auth'
 
 export type AuthUser = {
   id:        string
@@ -20,9 +19,15 @@ export type AuthUser = {
  *
  * Utilise `auth.api.userHasPermission` du plugin admin Better Auth.
  * L'endpoint POST `/admin/has-permission` accepte `{ userId, permissions: { resource: [action] } }`.
+ *
+ * L'import de `auth` est lazy (dynamic import) pour casser le cycle circulaire :
+ * index → routes/clients → middleware/auth → auth/index → db
  */
 export function requirePermission(resource: string, action: string) {
   return async (c: Context, next: Next) => {
+    // Import lazy pour casser le cycle circulaire
+    const { auth } = await import('../auth')
+
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
     if (!session?.user) {
