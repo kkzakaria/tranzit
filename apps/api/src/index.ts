@@ -4,6 +4,7 @@ import { logger } from 'hono/logger'
 import { auth } from './auth'
 import clientsRouter from './routes/clients'
 import dossiersRouter from './routes/dossiers'
+import documentsRouter from './routes/documents'
 
 const app = new Hono()
 
@@ -20,6 +21,11 @@ app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw))
 
 app.route('/api/v1/clients', clientsRouter)
 app.route('/api/v1/dossiers', dossiersRouter)
+
+// Upload sur les dossiers
+app.route('/api/v1/dossiers', documentsRouter)
+// Accès direct aux documents
+app.route('/api/v1/documents', documentsRouter)
 
 export default app
 
