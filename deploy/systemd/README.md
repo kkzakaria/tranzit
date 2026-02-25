@@ -7,9 +7,18 @@ Two unit files are provided. Use **one** depending on your setup:
 | `tranzit-api.service` | Bun installed directly on the server |
 | `tranzit-api-docker.service` | Running the Docker image on the server |
 
+> **Note:** Run all commands below from the **cloned repository root** on the server.
+
 ---
 
 ## Prerequisites
+
+### Install Bun (Bun direct only)
+
+```bash
+curl -fsSL https://bun.sh/install | sudo bash
+# Verify: /usr/local/bin/bun --version
+```
 
 ### Create the `tranzit` system user (Bun direct only)
 
@@ -17,7 +26,7 @@ Two unit files are provided. Use **one** depending on your setup:
 sudo useradd --system --no-create-home --shell /usr/sbin/nologin tranzit
 ```
 
-### Create the environment file
+### Create the environment file (both paths)
 
 ```bash
 sudo mkdir -p /etc/tranzit
@@ -33,8 +42,9 @@ sudo nano /etc/tranzit/api.env
 ```bash
 sudo mkdir -p /opt/tranzit/api
 sudo cp -r apps/api/. /opt/tranzit/api/
+# Install dependencies as the tranzit user to ensure correct file ownership
+sudo -u tranzit bun install --production --cwd /opt/tranzit/api
 sudo chown -R tranzit:tranzit /opt/tranzit/api
-cd /opt/tranzit/api && bun install --production
 ```
 
 ### Build the Docker image (Docker only)
@@ -61,6 +71,12 @@ sudo systemctl enable --now tranzit-api
 sudo systemctl enable --now tranzit-api-docker
 ```
 
+### Open the firewall port (if ufw is active)
+
+```bash
+sudo ufw allow 34001/tcp
+```
+
 ## Useful commands
 
 ```bash
@@ -79,10 +95,24 @@ sudo systemctl stop tranzit-api
 
 ## PM2 (alternative to systemd)
 
+### Install PM2
+
+```bash
+npm install -g pm2
+# or: bun add -g pm2
+```
+
+### Create the log directory
+
+```bash
+sudo mkdir -p /var/log/tranzit
+sudo chown $(whoami):$(whoami) /var/log/tranzit
+```
+
+### Start and enable on boot
+
 ```bash
 cd /opt/tranzit/api
-
-# Load env vars from file, then start
 pm2 start ecosystem.config.cjs
 
 # Save PM2 process list and enable startup hook
