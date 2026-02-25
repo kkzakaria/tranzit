@@ -1,10 +1,21 @@
 import { Hono } from 'hono'
 import { eq } from 'drizzle-orm'
+import { z } from 'zod'
 import { db } from '../db'
 import { clients } from '../db/schema'
 import { requirePermission } from '../middleware/auth'
 import { logAction } from '../services/audit.service'
 import type { AuthUser } from '../middleware/auth'
+
+const CreateClientSchema = z.object({
+  nom:     z.string().min(1, 'Le nom est requis'),
+  type:    z.enum(['IMPORTATEUR', 'EXPORTATEUR', 'LES_DEUX']),
+  rc:      z.string().optional(),
+  nif:     z.string().optional(),
+  contact: z.string().optional(),
+})
+
+const UpdateClientSchema = CreateClientSchema.partial()
 
 type Variables = { user: AuthUser }
 
@@ -25,19 +36,25 @@ router.get('/:id', requirePermission('client', 'read'), async (c) => {
 
 // POST /api/v1/clients
 router.post('/', requirePermission('client', 'create'), async (c) => {
-  const body = await c.req.json()
+  let body: unknown
+  try { body = await c.req.json() } catch { return c.json({ error: 'Corps JSON invalide' }, 400) }
+
+  const parsed = CreateClientSchema.safeParse(body)
+  if (!parsed.success) return c.json({ error: 'Données invalides', details: parsed.error.flatten() }, 400)
+
   const user = c.get('user')
+  const data = parsed.data
 
   const [created] = await db.transaction(async (tx) => {
     const rows = await tx.insert(clients).values({
-      nom:     body.nom,
-      type:    body.type,
-      rc:      body.rc ?? null,
-      nif:     body.nif ?? null,
-      contact: body.contact ?? null,
+      nom:     data.nom,
+      type:    data.type,
+      rc:      data.rc ?? null,
+      nif:     data.nif ?? null,
+      contact: data.contact ?? null,
     }).returning()
 
-    await logAction(tx as never, 'CLIENT_CREATED', 'CLIENT', rows[0].id, user, { after: rows[0] })
+    await logAction(tx as never, { entityType: 'CLIENT', action: 'CLIENT_CREATED' }, rows[0].id, user, { after: rows[0] })
     return rows
   })
 
@@ -46,20 +63,36 @@ router.post('/', requirePermission('client', 'create'), async (c) => {
 
 // PATCH /api/v1/clients/:id
 router.patch('/:id', requirePermission('client', 'update'), async (c) => {
-  const id   = c.req.param('id')
-  const body = await c.req.json()
+  const id = c.req.param('id')
+
+  let body: unknown
+  try { body = await c.req.json() } catch { return c.json({ error: 'Corps JSON invalide' }, 400) }
+
+  const parsed = UpdateClientSchema.safeParse(body)
+  if (!parsed.success) return c.json({ error: 'Données invalides', details: parsed.error.flatten() }, 400)
+
   const user = c.get('user')
 
   const [before] = await db.select().from(clients).where(eq(clients.id, id))
   if (!before) return c.json({ error: 'Client introuvable' }, 404)
 
+  const data = parsed.data
+
   const [after] = await db.transaction(async (tx) => {
     const rows = await tx.update(clients)
-      .set({ ...body, updatedAt: new Date() })
+      .set({
+        // Whitelist explicite : seuls ces champs peuvent être modifiés
+        ...(data.nom     !== undefined && { nom:     data.nom }),
+        ...(data.type    !== undefined && { type:    data.type }),
+        ...(data.rc      !== undefined && { rc:      data.rc }),
+        ...(data.nif     !== undefined && { nif:     data.nif }),
+        ...(data.contact !== undefined && { contact: data.contact }),
+        updatedAt: new Date(),
+      })
       .where(eq(clients.id, id))
       .returning()
 
-    await logAction(tx as never, 'CLIENT_UPDATED', 'CLIENT', id, user, { before, after: rows[0] })
+    await logAction(tx as never, { entityType: 'CLIENT', action: 'CLIENT_UPDATED' }, id, user, { before, after: rows[0] })
     return rows
   })
 
@@ -76,7 +109,7 @@ router.delete('/:id', requirePermission('client', 'delete'), async (c) => {
 
   await db.transaction(async (tx) => {
     await tx.delete(clients).where(eq(clients.id, id))
-    await logAction(tx as never, 'CLIENT_DELETED', 'CLIENT', id, user, { before: client })
+    await logAction(tx as never, { entityType: 'CLIENT', action: 'CLIENT_DELETED' }, id, user, { before: client })
   })
 
   return new Response(null, { status: 204 })

@@ -1,12 +1,18 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
+function requireEnv(name: string): string {
+  const val = process.env[name]
+  if (!val) throw new Error(`Variable d'environnement requise manquante : ${name}`)
+  return val
+}
+
 export const s3 = new S3Client({
-  endpoint:         process.env.S3_ENDPOINT!,
-  region:           process.env.S3_REGION ?? 'us-east-1',
+  endpoint:    requireEnv('S3_ENDPOINT'),
+  region:      process.env.S3_REGION ?? 'us-east-1',
   credentials: {
-    accessKeyId:     process.env.S3_ACCESS_KEY!,
-    secretAccessKey: process.env.S3_SECRET_KEY!,
+    accessKeyId:     requireEnv('S3_ACCESS_KEY'),
+    secretAccessKey: requireEnv('S3_SECRET_KEY'),
   },
   forcePathStyle: true,  // nécessaire pour MinIO
 })
@@ -30,13 +36,19 @@ export async function deleteFile(key: string): Promise<void> {
   await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }))
 }
 
+// Sanitise un segment de path S3 : supprime les traversées et les caractères dangereux
+function sanitizeSegment(segment: string): string {
+  return segment.replace(/[/\\..]/g, '_').replace(/[^\w\-]/g, '_').slice(0, 100)
+}
+
 export function buildStorageKey(
   reference: string,
   typeDoc:   string,
   filename:  string,
 ): string {
-  const year = new Date().getFullYear()
-  const id   = crypto.randomUUID()
-  const ext  = filename.split('.').pop() ?? 'bin'
-  return `dossiers/${year}/${reference}/${typeDoc}/${id}.${ext}`
+  const year    = new Date().getFullYear()
+  const id      = crypto.randomUUID()
+  const rawExt  = filename.split('.').pop() ?? 'bin'
+  const ext     = rawExt.replace(/[^\w]/g, '').slice(0, 10) || 'bin'
+  return `dossiers/${year}/${sanitizeSegment(reference)}/${sanitizeSegment(typeDoc)}/${id}.${ext}`
 }

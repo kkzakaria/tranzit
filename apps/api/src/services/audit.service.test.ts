@@ -14,8 +14,7 @@ describe('logAction', () => {
 
     await logAction(
       mockTx as never,
-      'CLIENT_CREATED',
-      'CLIENT',
+      { entityType: 'CLIENT', action: 'CLIENT_CREATED' },
       'client-1',
       user,
       { after: { nom: 'ACME' } }
@@ -39,9 +38,13 @@ describe('logAction', () => {
 
     const { logAction } = await import('./audit.service')
 
-    await logAction(mockTx as never, 'USER_LOGIN_FAILED', 'USER', null, null, {
-      meta: { emailTente: 'x@y.com' }
-    })
+    await logAction(
+      mockTx as never,
+      { entityType: 'USER', action: 'USER_LOGIN_FAILED' },
+      null,
+      null,
+      { meta: { emailTente: 'x@y.com' } }
+    )
 
     const entry = insertedValues[0] as Record<string, unknown>
     expect(entry.entityId).toBeUndefined()

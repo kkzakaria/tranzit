@@ -1,3 +1,5 @@
+export type UserRole = 'admin' | 'responsable' | 'agent' | 'superviseur'
+
 export type ClientType = 'IMPORTATEUR' | 'EXPORTATEUR' | 'LES_DEUX'
 
 export interface Client {

@@ -1,4 +1,4 @@
-import type { AuditAction, AuditEntityType } from '@tranzit/types'
+import type { AuditEvent } from '@tranzit/types'
 import { auditLog } from '../db/schema'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -11,16 +11,15 @@ export interface AuditUser {
 }
 
 export async function logAction(
-  tx:         AnyTx,
-  action:     AuditAction,
-  entityType: AuditEntityType,
-  entityId:   string | null,
-  user:       AuditUser | null,
-  payload?:   Record<string, unknown>,
+  tx:       AnyTx,
+  event:    AuditEvent,
+  entityId: string | null,
+  user:     AuditUser | null,
+  payload?: Record<string, unknown>,
 ): Promise<void> {
   await tx.insert(auditLog).values({
-    action,
-    entityType,
+    action:    event.action,
+    entityType: event.entityType,
     entityId:  entityId ?? undefined,
     userId:    user?.id ?? undefined,
     ip:        user?.ip ?? undefined,

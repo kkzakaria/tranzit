@@ -11,7 +11,8 @@ import {
 } from './permissions'
 
 export const auth = betterAuth({
-  secret: process.env.BETTER_AUTH_SECRET,
+  secret:         process.env.BETTER_AUTH_SECRET,
+  trustedOrigins: [process.env.WEB_URL ?? 'http://localhost:34000'],
 
   database: drizzleAdapter(db, {
     provider: 'pg',
