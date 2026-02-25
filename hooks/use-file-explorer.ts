@@ -54,7 +54,6 @@ interface ApiDocument {
   dossierId: string
   nom: string
   typeDoc: string
-  storageKey: string
   taille: number
   uploadedBy: string
   createdAt: string
@@ -128,7 +127,8 @@ export function useFileExplorerState(
     setIsLoading(true)
     setError(null)
     fetch(
-      `${API_URL}/api/v1/dossiers/${projectId}/documents`
+      `${API_URL}/api/v1/dossiers/${projectId}/documents`,
+      { credentials: 'include' }
     )
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
@@ -172,14 +172,15 @@ export function useFileExplorerState(
           formData.append("typeDoc", "AUTRE")
           const res = await fetch(
             `${API_URL}/api/v1/dossiers/${projectId}/documents`,
-            { method: "POST", body: formData }
+            { method: "POST", body: formData, credentials: "include" }
           )
           if (!res.ok) throw new Error(`HTTP ${res.status}`)
         }
         setUploadProgress(100)
         // Refresh document list
         const r = await fetch(
-          `${API_URL}/api/v1/dossiers/${projectId}/documents`
+          `${API_URL}/api/v1/dossiers/${projectId}/documents`,
+          { credentials: "include" }
         )
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         const data = (await r.json()) as { data?: unknown }
@@ -210,6 +211,7 @@ export function useFileExplorerState(
       try {
         const res = await fetch(`${API_URL}/api/v1/documents/${id}`, {
           method: "DELETE",
+          credentials: "include",
         })
         // 204 No Content on success
         if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`)
@@ -232,7 +234,7 @@ export function useFileExplorerState(
   )
 
   const getDownloadUrl = useCallback(async (id: string): Promise<string> => {
-    const res = await fetch(`${API_URL}/api/v1/documents/${id}/url`)
+    const res = await fetch(`${API_URL}/api/v1/documents/${id}/url`, { credentials: "include" })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const json = (await res.json()) as { data: { url: string } }
     return json.data.url

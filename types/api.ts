@@ -1173,7 +1173,71 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description UUID du dossier */
+                    dossierId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Liste des documents du dossier */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                /** @description UUID du document */
+                                id: string;
+                                /** @description UUID du dossier parent */
+                                dossierId: string;
+                                /** @description Nom du fichier */
+                                nom: string;
+                                /**
+                                 * @description Type de document
+                                 * @enum {string}
+                                 */
+                                typeDoc: "FACTURE" | "CONNAISSEMENT" | "CERTIFICAT_ORIGINE" | "LISTE_COLISAGE" | "DECLARATION" | "LICENCE" | "BON_COMMANDE" | "AUTRE";
+                                /** @description Taille en octets */
+                                taille: number;
+                                /** @description UUID de l'utilisateur ayant uploadé le document */
+                                uploadedBy: string;
+                                /** @description Date d'upload ISO 8601 */
+                                createdAt: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Non authentifié */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Dossier introuvable */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
         put?: never;
         post: {
             parameters: {
@@ -1221,8 +1285,6 @@ export interface paths {
                                  * @enum {string}
                                  */
                                 typeDoc: "FACTURE" | "CONNAISSEMENT" | "CERTIFICAT_ORIGINE" | "LISTE_COLISAGE" | "DECLARATION" | "LICENCE" | "BON_COMMANDE" | "AUTRE";
-                                /** @description Clé de stockage S3 */
-                                storageKey: string;
                                 /** @description Taille en octets */
                                 taille: number;
                                 /** @description UUID de l'utilisateur ayant uploadé le document */
@@ -1348,7 +1410,71 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description UUID du dossier */
+                    dossierId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Liste des documents du dossier */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                /** @description UUID du document */
+                                id: string;
+                                /** @description UUID du dossier parent */
+                                dossierId: string;
+                                /** @description Nom du fichier */
+                                nom: string;
+                                /**
+                                 * @description Type de document
+                                 * @enum {string}
+                                 */
+                                typeDoc: "FACTURE" | "CONNAISSEMENT" | "CERTIFICAT_ORIGINE" | "LISTE_COLISAGE" | "DECLARATION" | "LICENCE" | "BON_COMMANDE" | "AUTRE";
+                                /** @description Taille en octets */
+                                taille: number;
+                                /** @description UUID de l'utilisateur ayant uploadé le document */
+                                uploadedBy: string;
+                                /** @description Date d'upload ISO 8601 */
+                                createdAt: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Non authentifié */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+                /** @description Dossier introuvable */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: string;
+                        };
+                    };
+                };
+            };
+        };
         put?: never;
         post: {
             parameters: {
@@ -1396,8 +1522,6 @@ export interface paths {
                                  * @enum {string}
                                  */
                                 typeDoc: "FACTURE" | "CONNAISSEMENT" | "CERTIFICAT_ORIGINE" | "LISTE_COLISAGE" | "DECLARATION" | "LICENCE" | "BON_COMMANDE" | "AUTRE";
-                                /** @description Clé de stockage S3 */
-                                storageKey: string;
                                 /** @description Taille en octets */
                                 taille: number;
                                 /** @description UUID de l'utilisateur ayant uploadé le document */
