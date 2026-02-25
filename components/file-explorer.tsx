@@ -94,6 +94,7 @@ function FileExplorerPreview({
   const t = useTranslations("file-explorer")
   const { getDownloadUrl } = useFileExplorer()
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewError, setPreviewError] = useState<string | null>(null)
   const mimeType = file.type === "file" ? file.mimeType : undefined
 
   useEffect(() => {
@@ -101,6 +102,7 @@ function FileExplorerPreview({
     if (!mimeType?.startsWith("image/") && mimeType !== "application/pdf")
       return
 
+    setPreviewError(null)
     let cancelled = false
     getDownloadUrl(file.id)
       .then((url) => {
@@ -108,6 +110,8 @@ function FileExplorerPreview({
       })
       .catch((e: unknown) => {
         console.error("[FileExplorer] Failed to get preview URL:", e)
+        if (!cancelled)
+          setPreviewError(e instanceof Error ? e.message : "Impossible de charger l'aperçu")
       })
     return () => {
       cancelled = true
@@ -120,20 +124,32 @@ function FileExplorerPreview({
     if (file.mimeType?.startsWith("image/")) {
       return (
         <div className="flex min-h-48 items-center justify-center overflow-hidden rounded-lg bg-muted">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewUrl ?? ""}
-            alt={file.name}
-            className="max-h-64 w-full object-contain"
-          />
+          {previewError ? (
+            <p className="text-center text-xs text-destructive">{previewError}</p>
+          ) : previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={previewUrl}
+              alt={file.name}
+              className="max-h-64 w-full object-contain"
+            />
+          ) : null}
         </div>
       )
     }
 
     if (file.mimeType === "application/pdf") {
+      if (previewError) {
+        return (
+          <div className="flex min-h-48 items-center justify-center rounded-lg bg-muted">
+            <p className="text-center text-xs text-destructive">{previewError}</p>
+          </div>
+        )
+      }
+      if (!previewUrl) return null
       return (
         <iframe
-          src={previewUrl ?? ""}
+          src={previewUrl}
           className="h-64 w-full rounded-lg border"
           title={file.name}
         />
@@ -194,9 +210,11 @@ function FileExplorerSheet() {
   const { selectedFile, selectFile, deleteFile, getDownloadUrl } =
     useFileExplorer()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
 
   const handleDownload = useCallback(
     async (file: FileItem) => {
+      setDownloadError(null)
       try {
         const url = await getDownloadUrl(file.id)
         const a = document.createElement("a")
@@ -208,6 +226,7 @@ function FileExplorerSheet() {
         document.body.removeChild(a)
       } catch (e) {
         console.error("[FileExplorer] Failed to get download URL:", e)
+        setDownloadError(e instanceof Error ? e.message : "Échec du téléchargement")
       }
     },
     [getDownloadUrl]
@@ -269,6 +288,9 @@ function FileExplorerSheet() {
             </div>
           </SheetHeader>
           <SheetBody>
+            {downloadError && (
+              <p className="mb-2 text-xs text-destructive">{downloadError}</p>
+            )}
             {selectedFile && <FileExplorerPreview file={selectedFile} />}
           </SheetBody>
         </SheetContent>
@@ -310,7 +332,7 @@ function FileExplorerItem({
   variant?: "grid" | "list"
 }) {
   const t = useTranslations("file-explorer")
-  const { navigateTo, selectFile, renameFile, deleteFile, getDownloadUrl } =
+  const { navigateTo, selectFile, renameFile, deleteFile, getDownloadUrl, setMutationError } =
     useFileExplorer()
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(item.name)
@@ -375,6 +397,7 @@ function FileExplorerItem({
   }, [item.id, deleteFile])
 
   const handleItemDownload = useCallback(async () => {
+    setMutationError(null)
     try {
       const url = await getDownloadUrl(item.id)
       const a = document.createElement("a")
@@ -386,8 +409,9 @@ function FileExplorerItem({
       document.body.removeChild(a)
     } catch (e) {
       console.error("[FileExplorer] Failed to get download URL:", e)
+      setMutationError(e instanceof Error ? e.message : "Échec du téléchargement")
     }
-  }, [item.id, item.name, getDownloadUrl])
+  }, [item.id, item.name, getDownloadUrl, setMutationError])
 
   const contextMenu = (
     <DropdownMenu>
