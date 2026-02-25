@@ -3,6 +3,7 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { auth } from './auth'
 import clientsRouter from './routes/clients'
+import dossiersRouter from './routes/dossiers'
 
 const app = new Hono()
 
@@ -18,6 +19,7 @@ app.get('/api/v1/health', (c) => c.json({ status: 'ok', ts: new Date().toISOStri
 app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw))
 
 app.route('/api/v1/clients', clientsRouter)
+app.route('/api/v1/dossiers', dossiersRouter)
 
 export default app
 
