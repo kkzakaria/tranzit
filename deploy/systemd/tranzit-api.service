@@ -1,8 +1,10 @@
 [Unit]
 Description=Tranzit API (Bun)
 Documentation=https://github.com/kkzakaria/tranzit
-After=network.target postgresql.service
-Wants=postgresql.service
+After=network-online.target postgresql.service
+Wants=network-online.target postgresql.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
 Type=simple
@@ -11,10 +13,9 @@ Group=tranzit
 WorkingDirectory=/opt/tranzit/api
 EnvironmentFile=/etc/tranzit/api.env
 ExecStart=/usr/local/bin/bun run src/index.ts
-Restart=always
+Restart=on-failure
 RestartSec=5
-StartLimitIntervalSec=60
-StartLimitBurst=5
+TimeoutStopSec=10
 
 # Hardening
 NoNewPrivileges=true
