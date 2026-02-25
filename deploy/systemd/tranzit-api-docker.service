@@ -1,0 +1,33 @@
+[Unit]
+Description=Tranzit API (Docker)
+Documentation=https://github.com/kkzakaria/tranzit
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+
+ExecStartPre=-/usr/bin/docker stop tranzit-api
+ExecStartPre=-/usr/bin/docker rm tranzit-api
+ExecStart=/usr/bin/docker run \
+  --name tranzit-api \
+  --rm \
+  --env-file /etc/tranzit/api.env \
+  -p 34001:34001 \
+  --log-driver=journald \
+  --log-opt tag=tranzit-api \
+  tranzit-api:latest
+ExecStop=/usr/bin/docker stop tranzit-api
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tranzit-api-docker
+
+[Install]
+WantedBy=multi-user.target
