@@ -7,20 +7,29 @@ function requireEnv(name: string): string {
   return val
 }
 
-export const s3 = new S3Client({
-  endpoint:    requireEnv('S3_ENDPOINT'),
-  region:      process.env.S3_REGION ?? 'us-east-1',
-  credentials: {
-    accessKeyId:     requireEnv('S3_ACCESS_KEY'),
-    secretAccessKey: requireEnv('S3_SECRET_KEY'),
-  },
-  forcePathStyle: true,  // nécessaire pour MinIO
-})
+// Initialisation lazy — évite de faire échouer le démarrage (et les tests)
+// si les vars S3 ne sont pas encore configurées. L'erreur est levée à la première utilisation.
+let _s3: S3Client | null = null
+
+function getS3(): S3Client {
+  if (!_s3) {
+    _s3 = new S3Client({
+      endpoint:    requireEnv('S3_ENDPOINT'),
+      region:      process.env.S3_REGION ?? 'us-east-1',
+      credentials: {
+        accessKeyId:     requireEnv('S3_ACCESS_KEY'),
+        secretAccessKey: requireEnv('S3_SECRET_KEY'),
+      },
+      forcePathStyle: true,
+    })
+  }
+  return _s3
+}
 
 const BUCKET = process.env.S3_BUCKET ?? 'tranzit'
 
 export async function uploadFile(key: string, body: ArrayBuffer, contentType: string): Promise<void> {
-  await s3.send(new PutObjectCommand({
+  await getS3().send(new PutObjectCommand({
     Bucket:      BUCKET,
     Key:         key,
     Body:        new Uint8Array(body),
@@ -29,11 +38,11 @@ export async function uploadFile(key: string, body: ArrayBuffer, contentType: st
 }
 
 export async function getSignedDownloadUrl(key: string, expiresIn = 900): Promise<string> {
-  return getSignedUrl(s3, new GetObjectCommand({ Bucket: BUCKET, Key: key }), { expiresIn })
+  return getSignedUrl(getS3(), new GetObjectCommand({ Bucket: BUCKET, Key: key }), { expiresIn })
 }
 
 export async function deleteFile(key: string): Promise<void> {
-  await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }))
+  await getS3().send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }))
 }
 
 // Sanitise un segment de path S3 : supprime les traversées et les caractères dangereux
