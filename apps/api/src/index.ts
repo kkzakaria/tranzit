@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { auth } from './auth'
+import sessionsRouter from './routes/sessions'
 import clientsRouter from './routes/clients'
 import dossiersRouter from './routes/dossiers'
 import documentsRouter from './routes/documents'
@@ -15,6 +16,9 @@ app.use('*', cors({
 }))
 
 app.get('/api/v1/health', (c) => c.json({ status: 'ok', ts: new Date().toISOString() }))
+
+// Routes sessions — monté AVANT Better Auth pour éviter la capture par /api/auth/*
+app.route('/api/v1/auth/sessions', sessionsRouter)
 
 // Monter toutes les routes Better Auth
 app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw))
