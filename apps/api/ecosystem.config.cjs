@@ -5,11 +5,12 @@ module.exports = {
       name:        'tranzit-api',
       script:      'src/index.ts',
       interpreter: '/usr/local/bin/bun',
-      interpreter_args: '',  // e.g. '--smol' on memory-constrained hosts
       cwd:         '/opt/tranzit/api',
 
-      // Environment — loaded from file, then merged with inline env
-      env_file: '/etc/tranzit/api.env',
+      // Environment — PM2 does not support env_file natively.
+      // Source /etc/tranzit/api.env before running `pm2 start` (see README).
+      // PM2 saves the env snapshot in ~/.pm2/dump.pm2 on `pm2 save`,
+      // so reboots restore the correct values without re-sourcing.
       env: {
         NODE_ENV: 'production',
         PORT:     '34001',
@@ -22,9 +23,9 @@ module.exports = {
 
       // Restart policy
       restart_delay:             5000,   // ms between restarts
-      max_restarts:              10,     // max restarts in exp backoff window
+      max_restarts:              10,     // hard ceiling — PM2 stops restarting after this count
       exp_backoff_restart_delay: 100,
-      kill_timeout:              5000,   // ms before SIGKILL after SIGINT
+      kill_timeout:              5000,   // ms before SIGKILL; PM2 sends SIGINT first (override: PM2_KILL_SIGNAL=SIGTERM)
       max_memory_restart:        '512M',
       watch:                     false,
 

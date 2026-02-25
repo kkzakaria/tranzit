@@ -42,9 +42,9 @@ sudo nano /etc/tranzit/api.env
 ```bash
 sudo mkdir -p /opt/tranzit/api
 sudo cp -r apps/api/. /opt/tranzit/api/
-# Install dependencies as the tranzit user to ensure correct file ownership
-sudo -u tranzit bun install --production --cwd /opt/tranzit/api
+# Transfer ownership before bun install so the tranzit user can write node_modules
 sudo chown -R tranzit:tranzit /opt/tranzit/api
+sudo -u tranzit bun install --production --cwd /opt/tranzit/api
 ```
 
 ### Build the Docker image (Docker only)
@@ -113,6 +113,12 @@ sudo chown $(whoami):$(whoami) /var/log/tranzit
 
 ```bash
 cd /opt/tranzit/api
+
+# Source the env file first — PM2 captures the env snapshot in pm2 save,
+# so reboots restore the correct values without re-sourcing.
+set -a && source /etc/tranzit/api.env && set +a
+# Note: /etc/tranzit/api.env must use plain KEY=VALUE syntax (no shell variable
+# expansion, no export statements) as PM2 parses it with dotenv internally.
 pm2 start ecosystem.config.cjs
 
 # Save PM2 process list and enable startup hook
