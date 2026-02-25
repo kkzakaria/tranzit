@@ -22,26 +22,29 @@ apps/api/
 
 ## systemd — Bun direct (`tranzit-api.service`)
 
-- `Type=simple`, `Restart=always`, `RestartSec=5`
+- `Type=simple`, `Restart=on-failure`, `RestartSec=5`, `TimeoutStopSec=10`
 - `User=tranzit` — dedicated non-root user
 - `WorkingDirectory=/opt/tranzit/api`
 - `ExecStart=/usr/local/bin/bun run src/index.ts`
 - `EnvironmentFile=/etc/tranzit/api.env` — secrets file (chmod 600, owned root)
+- Hardening: `ProtectSystem=strict`, `NoNewPrivileges=true`, `PrivateTmp=true`
 - Logs via `journalctl -u tranzit-api`
 
 ## systemd — Docker (`tranzit-api-docker.service`)
 
-- `Type=simple`, `Restart=always`, `RestartSec=5`
-- `After=docker.service`
-- `ExecStartPre` stops any existing container with the same name
-- `ExecStart` runs `docker run --rm --env-file /etc/tranzit/api.env -p 34001:34001 tranzit-api:latest`
-- `ExecStop` calls `docker stop tranzit-api`
+- `Type=simple`, `Restart=on-failure`, `KillMode=none` (intentional — lets ExecStop own lifecycle)
+- `After=docker.service`, `SuccessExitStatus=143 137`
+- `ExecStartPre` stops and removes any existing container with the same name
+- `ExecStart` runs `docker run --name tranzit-api --env-file ... --log-driver=journald`
+- `ExecStop` calls `docker stop -t 10 tranzit-api`; `ExecStopPost` removes the container
+- No `--rm` on `docker run` — cleanup is owned by ExecStartPre/ExecStopPost
+- Logs via `journalctl CONTAINER_NAME=tranzit-api`
 
 ## PM2 (`ecosystem.config.cjs`)
 
-- `interpreter: 'bun'`, `script: 'src/index.ts'`
-- `env_file: '/etc/tranzit/api.env'`
-- `restart_delay: 5000`, `max_restarts: 10`, `watch: false`
+- `interpreter: '/usr/local/bin/bun'`, `script: 'src/index.ts'`
+- PM2 does not support `env_file` natively — source `/etc/tranzit/api.env` before `pm2 start`
+- `restart_delay: 5000`, `max_restarts: 10` (hard ceiling), `max_memory_restart: 512M`, `watch: false`
 
 ## README (`deploy/systemd/README.md`)
 
