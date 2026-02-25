@@ -24,6 +24,8 @@ export interface FileExplorerContextValue {
   renameFile: (id: string, name: string) => Promise<void>
   deleteFile: (id: string) => Promise<void>
   moveFile: (id: string, targetPath: string) => Promise<void>
+  getDownloadUrl: (id: string) => Promise<string>
+  setMutationError: (err: string | null) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -41,6 +43,35 @@ export function useFileExplorer() {
 }
 
 const VIEW_MODE_KEY = "file-explorer:v1:view-mode"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ""
+
+// ---------------------------------------------------------------------------
+// Backend document shape — from types/api.ts paths["/api/v1/dossiers/{dossierId}/documents"]
+// ---------------------------------------------------------------------------
+
+interface ApiDocument {
+  id: string
+  dossierId: string
+  nom: string
+  typeDoc: string
+  taille: number
+  uploadedBy: string
+  createdAt: string
+}
+
+/** Map a backend ApiDocument to the local FileItem type */
+function toFileItem(doc: ApiDocument): FileItem {
+  return {
+    id: doc.id,
+    name: doc.nom,
+    type: "file",
+    path: `/${doc.nom}`,
+    modifiedAt: doc.createdAt,
+    size: doc.taille,
+    mimeType: undefined,
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Hook (used by the root FileExplorer component)
@@ -91,23 +122,32 @@ export function useFileExplorerState(
     return crumbs
   }, [currentPath])
 
-  // Fetch files whenever path changes
+  // Fetch documents for the dossier whenever projectId changes
   useEffect(() => {
+    if (!API_URL) {
+      setError(
+        "Configuration manquante : NEXT_PUBLIC_API_URL n'est pas définie. " +
+        "Créez .env.local avec NEXT_PUBLIC_API_URL=http://localhost:34001"
+      )
+      setIsLoading(false)
+      return
+    }
     let cancelled = false
     setIsLoading(true)
     setError(null)
     fetch(
-      `/api/projects/${projectId}/files?path=${encodeURIComponent(currentPath)}`
+      `${API_URL}/api/v1/dossiers/${projectId}/documents`,
+      { credentials: 'include' }
     )
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
-        return r.json() as Promise<{ items: FileItem[] }>
+        return r.json() as Promise<{ data: ApiDocument[] }>
       })
-      .then(({ items }) => {
-        if (!cancelled) setFiles(items)
+      .then(({ data }) => {
+        if (!cancelled) setFiles(data.map(toFileItem))
       })
       .catch((e: unknown) => {
-        console.error("[FileExplorer] Failed to fetch files:", e)
+        console.error("[FileExplorer] Failed to fetch documents:", e)
         if (!cancelled)
           setError(e instanceof Error ? e.message : "Erreur inconnue")
       })
@@ -117,7 +157,7 @@ export function useFileExplorerState(
     return () => {
       cancelled = true
     }
-  }, [projectId, currentPath])
+  }, [projectId])
 
   const navigateTo = useCallback((path: string) => {
     setCurrentPath(path)
@@ -134,24 +174,29 @@ export function useFileExplorerState(
       setUploadProgress(0)
       setMutationError(null)
       try {
-        const formData = new FormData()
-        newFiles.forEach((f) => formData.append("files", f))
-        formData.append("path", currentPathRef.current)
-        const res = await fetch(
-          `/api/projects/${projectId}/files/upload`,
-          { method: "POST", body: formData }
-        )
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        // Upload files sequentially — backend accepts one file per request
+        for (const file of newFiles) {
+          const formData = new FormData()
+          formData.append("file", file)
+          formData.append("typeDoc", "AUTRE")
+          const res = await fetch(
+            `${API_URL}/api/v1/dossiers/${projectId}/documents`,
+            { method: "POST", body: formData, credentials: "include" }
+          )
+          if (!res.ok) throw new Error(`Échec de l'envoi de "${file.name}" (HTTP ${res.status})`)
+        }
         setUploadProgress(100)
-        // Refresh file list
+        // Refresh document list
         const r = await fetch(
-          `/api/projects/${projectId}/files?path=${encodeURIComponent(currentPathRef.current)}`
+          `${API_URL}/api/v1/dossiers/${projectId}/documents`,
+          { credentials: "include" }
         )
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
-        const data = (await r.json()) as { items?: unknown }
-        if (!Array.isArray(data?.items)) throw new Error("Invalid response")
-        setFiles(data.items as FileItem[])
+        const data = (await r.json()) as { data?: unknown }
+        if (!Array.isArray(data?.data)) throw new Error("Invalid response")
+        setFiles((data.data as ApiDocument[]).map(toFileItem))
       } catch (e) {
+        console.error("[FileExplorer] Failed to upload files:", e)
         setMutationError(e instanceof Error ? e.message : "Erreur inconnue")
         throw e // re-throw so callers can handle too
       } finally {
@@ -163,63 +208,55 @@ export function useFileExplorerState(
   )
 
   const renameFile = useCallback(
-    async (id: string, name: string) => {
-      setMutationError(null)
-      try {
-        const res = await fetch(`/api/projects/${projectId}/files/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name }),
-        })
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, name } : f)))
-        setSelectedFile((prev) =>
-          prev?.id === id ? { ...prev, name } : prev
-        )
-      } catch (e) {
-        setMutationError(e instanceof Error ? e.message : "Erreur inconnue")
-        throw e
-      }
+    async (_id: string, _name: string) => {
+      // Renaming documents is not supported by the tranzit-api backend
+      const msg = "Renommer un document n'est pas supporté par l'API"
+      setMutationError(msg)
+      throw new Error(msg)
     },
-    [projectId]
+    []
   )
 
   const deleteFile = useCallback(
     async (id: string) => {
       setMutationError(null)
       try {
-        const res = await fetch(`/api/projects/${projectId}/files/${id}`, {
+        const res = await fetch(`${API_URL}/api/v1/documents/${id}`, {
           method: "DELETE",
+          credentials: "include",
         })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         setFiles((prev) => prev.filter((f) => f.id !== id))
         setSelectedFile((prev) => (prev?.id === id ? null : prev))
       } catch (e) {
+        console.error("[FileExplorer] Failed to delete file:", e)
         setMutationError(e instanceof Error ? e.message : "Erreur inconnue")
         throw e
       }
     },
-    [projectId]
+    []
   )
 
   const moveFile = useCallback(
-    async (id: string, targetPath: string) => {
-      setMutationError(null)
-      try {
-        const res = await fetch(`/api/projects/${projectId}/files/${id}/move`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ targetPath }),
-        })
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        setFiles((prev) => prev.filter((f) => f.id !== id))
-      } catch (e) {
-        setMutationError(e instanceof Error ? e.message : "Erreur inconnue")
-        throw e
-      }
+    async (_id: string, _targetPath: string) => {
+      // Moving documents is not supported by the tranzit-api backend
+      throw new Error("Déplacer un document n'est pas supporté par l'API")
     },
-    [projectId]
+    []
   )
+
+  const getDownloadUrl = useCallback(async (id: string): Promise<string> => {
+    const res = await fetch(`${API_URL}/api/v1/documents/${id}/url`, { credentials: "include" })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const json: unknown = await res.json()
+    if (
+      typeof json !== "object" || json === null ||
+      typeof (json as { data?: { url?: unknown } }).data?.url !== "string"
+    ) {
+      throw new Error("Réponse inattendue du serveur : URL manquante")
+    }
+    return (json as { data: { url: string } }).data.url
+  }, [])
 
   return useMemo<FileExplorerContextValue>(
     () => ({
@@ -241,6 +278,8 @@ export function useFileExplorerState(
       renameFile,
       deleteFile,
       moveFile,
+      getDownloadUrl,
+      setMutationError,
     }),
     [
       projectId,
@@ -261,6 +300,8 @@ export function useFileExplorerState(
       renameFile,
       deleteFile,
       moveFile,
+      getDownloadUrl,
+      setMutationError,
     ]
   )
 }

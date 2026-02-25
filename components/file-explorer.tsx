@@ -92,6 +92,31 @@ function FileExplorerPreview({
   [key: string]: unknown
 }) {
   const t = useTranslations("file-explorer")
+  const { getDownloadUrl } = useFileExplorer()
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+  const mimeType = file.type === "file" ? file.mimeType : undefined
+
+  useEffect(() => {
+    if (file.type === "folder") return
+    if (!mimeType?.startsWith("image/") && mimeType !== "application/pdf")
+      return
+
+    setPreviewError(null)
+    let cancelled = false
+    getDownloadUrl(file.id)
+      .then((url) => {
+        if (!cancelled) setPreviewUrl(url)
+      })
+      .catch((e: unknown) => {
+        console.error("[FileExplorer] Failed to get preview URL:", e)
+        if (!cancelled)
+          setPreviewError(e instanceof Error ? e.message : "Impossible de charger l'aperçu")
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [file.id, file.type, mimeType, getDownloadUrl])
 
   const content = (() => {
     if (file.type === "folder") return null
@@ -99,21 +124,32 @@ function FileExplorerPreview({
     if (file.mimeType?.startsWith("image/")) {
       return (
         <div className="flex min-h-48 items-center justify-center overflow-hidden rounded-lg bg-muted">
-          {/* TODO: replace /api/projects/preview with the real backend preview endpoint */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={`/api/projects/preview?id=${file.id}`}
-            alt={file.name}
-            className="max-h-64 w-full object-contain"
-          />
+          {previewError ? (
+            <p className="text-center text-xs text-destructive">{previewError}</p>
+          ) : previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={previewUrl}
+              alt={file.name}
+              className="max-h-64 w-full object-contain"
+            />
+          ) : null}
         </div>
       )
     }
 
     if (file.mimeType === "application/pdf") {
+      if (previewError) {
+        return (
+          <div className="flex min-h-48 items-center justify-center rounded-lg bg-muted">
+            <p className="text-center text-xs text-destructive">{previewError}</p>
+          </div>
+        )
+      }
+      if (!previewUrl) return null
       return (
         <iframe
-          src={`/api/projects/preview?id=${file.id}`}
+          src={previewUrl}
           className="h-64 w-full rounded-lg border"
           title={file.name}
         />
@@ -171,8 +207,30 @@ function FileExplorerPreview({
 
 function FileExplorerSheet() {
   const t = useTranslations("file-explorer")
-  const { selectedFile, selectFile, deleteFile } = useFileExplorer()
+  const { selectedFile, selectFile, deleteFile, getDownloadUrl } =
+    useFileExplorer()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
+
+  const handleDownload = useCallback(
+    async (file: FileItem) => {
+      setDownloadError(null)
+      try {
+        const url = await getDownloadUrl(file.id)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = file.name
+        a.rel = "noopener noreferrer"
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+      } catch (e) {
+        console.error("[FileExplorer] Failed to get download URL:", e)
+        setDownloadError(e instanceof Error ? e.message : "Échec du téléchargement")
+      }
+    },
+    [getDownloadUrl]
+  )
 
   const handleDelete = useCallback(async () => {
     if (!selectedFile) return
@@ -202,12 +260,7 @@ function FileExplorerSheet() {
                     variant="ghost"
                     size="icon-sm"
                     aria-label={t("actions.download")}
-                    render={
-                      <a
-                        href={`/api/projects/preview?id=${selectedFile.id}`}
-                        download={selectedFile.name}
-                      />
-                    }
+                    onClick={() => handleDownload(selectedFile)}
                   >
                     <HugeiconsIcon icon={Download01Icon} />
                   </Button>
@@ -235,6 +288,9 @@ function FileExplorerSheet() {
             </div>
           </SheetHeader>
           <SheetBody>
+            {downloadError && (
+              <p className="mb-2 text-xs text-destructive">{downloadError}</p>
+            )}
             {selectedFile && <FileExplorerPreview file={selectedFile} />}
           </SheetBody>
         </SheetContent>
@@ -276,7 +332,8 @@ function FileExplorerItem({
   variant?: "grid" | "list"
 }) {
   const t = useTranslations("file-explorer")
-  const { navigateTo, selectFile, renameFile, deleteFile } = useFileExplorer()
+  const { navigateTo, selectFile, renameFile, deleteFile, getDownloadUrl, setMutationError } =
+    useFileExplorer()
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(item.name)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -339,6 +396,23 @@ function FileExplorerItem({
     setDeleteOpen(false)
   }, [item.id, deleteFile])
 
+  const handleItemDownload = useCallback(async () => {
+    setMutationError(null)
+    try {
+      const url = await getDownloadUrl(item.id)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = item.name
+      a.rel = "noopener noreferrer"
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    } catch (e) {
+      console.error("[FileExplorer] Failed to get download URL:", e)
+      setMutationError(e instanceof Error ? e.message : "Échec du téléchargement")
+    }
+  }, [item.id, item.name, getDownloadUrl, setMutationError])
+
   const contextMenu = (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -357,14 +431,7 @@ function FileExplorerItem({
           <HugeiconsIcon icon={Edit01Icon} />
           {t("actions.rename")}
         </DropdownMenuItem>
-        <DropdownMenuItem
-          render={
-            <a
-              href={`/api/projects/preview?id=${item.id}`}
-              download={item.name}
-            />
-          }
-        >
+        <DropdownMenuItem onSelect={handleItemDownload}>
           <HugeiconsIcon icon={Download01Icon} />
           {t("actions.download")}
         </DropdownMenuItem>

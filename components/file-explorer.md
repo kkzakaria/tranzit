@@ -47,16 +47,19 @@ Must be used inside a `<FileExplorer>` tree.
 
 `viewMode` is persisted to `localStorage` under key `file-explorer:v1:view-mode` (same hydration pattern as `sidebar.tsx`).
 
-## API contract
+## API contract (tranzit-api)
+
+Tous les appels passent par `NEXT_PUBLIC_API_URL` (défaut `http://localhost:34001`).
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/projects/[id]/files?path=...` | List files at path. Response: `{ items: FileItem[] }` |
-| POST | `/api/projects/[id]/files/upload` | Upload files (multipart: `files`, `path`). Response: `{ ok: true }` |
-| PATCH | `/api/projects/[id]/files/[fileId]` | Rename. Body: `{ name }`. Response: `{ ok: true }` |
-| DELETE | `/api/projects/[id]/files/[fileId]` | Delete file. Response: `{ ok: true }` |
-| POST | `/api/projects/[id]/files/[fileId]/move` | Move. Body: `{ targetPath }`. Response: `{ ok: true }` |
+| GET | `/api/v1/dossiers/{dossierId}/documents` | Liste les documents d'un dossier. Response: `{ data: ApiDocument[] }` |
+| POST | `/api/v1/dossiers/{dossierId}/documents` | Upload un document (multipart: `file`, `typeDoc`). Response: `{ data: ApiDocument }` |
+| DELETE | `/api/v1/documents/{id}` | Supprime un document. Response: 204 No Content |
+| GET | `/api/v1/documents/{id}/url` | Retourne l'URL signée (preview + téléchargement). Response: `{ data: { url: string } }` |
 
-> **Note:** Image/PDF preview URLs (`/api/projects/preview?id=...`) are placeholder endpoints — replace with your backend's real preview endpoint before production.
+> **Note:** Rename et Move ne sont pas supportés par le backend — les opérations correspondantes lèvent une erreur explicite.
+>
+> **TODO:** Le champ `mimeType` de `FileItem` est actuellement `undefined` (le backend retourne `typeDoc`, pas un MIME type). Les previews image/PDF sont inactives tant que ce mapping n'est pas implémenté.
 
 See `hooks/use-file-explorer.ts` for the full `FileItem` type.
