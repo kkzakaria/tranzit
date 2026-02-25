@@ -1,0 +1,31 @@
+[Unit]
+Description=Tranzit API (Bun)
+Documentation=https://github.com/kkzakaria/tranzit
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=tranzit
+Group=tranzit
+WorkingDirectory=/opt/tranzit/api
+EnvironmentFile=/etc/tranzit/api.env
+ExecStart=/usr/local/bin/bun run src/index.ts
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/tranzit/api
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tranzit-api
+
+[Install]
+WantedBy=multi-user.target
