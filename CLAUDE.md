@@ -1,4 +1,6 @@
-# Tranzit
+# Tranzit Web
+
+Frontend Next.js indépendant. Le backend vit dans le repo `tranzit-api` (Hono, port 34001).
 
 ## Stack
 - Next.js 16 (App Router, Turbopack) · React 19 · TypeScript
@@ -12,6 +14,13 @@
 - `bun run build` — production build (always verify before committing)
 - `bun run lint` — ESLint
 - `npx tsc --noEmit` — type check (no emit)
+- `bun run gen:types` — regenerate `types/api.ts` from backend OpenAPI spec (requires backend running on port 34001)
+
+## API
+- Backend URL configured via `NEXT_PUBLIC_API_URL` in `.env.local` (e.g. `http://localhost:34001`)
+- All fetch calls use `credentials: 'include'` (cross-origin session cookies)
+- API types live in `types/api.ts` — auto-generated, never edit manually
+- To sync types after a backend change: start `tranzit-api` then run `bun run gen:types`
 
 ## Conventions
 - User communicates in French
@@ -35,6 +44,6 @@
 - New i18n namespaces must be added in both: `i18n/request.ts` (Promise.all import + returned messages object)
 
 ## GitHub
-- Repo: kkzakaria/tranzit
+- Repo: kkzakaria/tranzit-web
 - Main branch protected — all changes via PRs
 - Commit style: imperative, concise subject line describing the "why"
