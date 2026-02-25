@@ -12,6 +12,7 @@ import {
 
 export const auth = betterAuth({
   secret:         process.env.BETTER_AUTH_SECRET,
+  baseURL:        process.env.BETTER_AUTH_URL,
   trustedOrigins: [process.env.WEB_URL ?? 'http://localhost:34000'],
 
   database: drizzleAdapter(db, {
