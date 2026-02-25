@@ -24,6 +24,7 @@ export interface FileExplorerContextValue {
   renameFile: (id: string, name: string) => Promise<void>
   deleteFile: (id: string) => Promise<void>
   moveFile: (id: string, targetPath: string) => Promise<void>
+  getDownloadUrl: (id: string) => Promise<string>
 }
 
 // ---------------------------------------------------------------------------
@@ -230,6 +231,13 @@ export function useFileExplorerState(
     []
   )
 
+  const getDownloadUrl = useCallback(async (id: string): Promise<string> => {
+    const res = await fetch(`${API_URL}/api/v1/documents/${id}/url`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const json = (await res.json()) as { data: { url: string } }
+    return json.data.url
+  }, [])
+
   return useMemo<FileExplorerContextValue>(
     () => ({
       projectId,
@@ -250,6 +258,7 @@ export function useFileExplorerState(
       renameFile,
       deleteFile,
       moveFile,
+      getDownloadUrl,
     }),
     [
       projectId,
@@ -270,6 +279,7 @@ export function useFileExplorerState(
       renameFile,
       deleteFile,
       moveFile,
+      getDownloadUrl,
     ]
   )
 }
