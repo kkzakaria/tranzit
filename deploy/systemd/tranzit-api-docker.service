@@ -11,22 +11,25 @@ StartLimitBurst=5
 Type=simple
 Restart=on-failure
 RestartSec=5
+SuccessExitStatus=143 137
+TimeoutStartSec=30
 TimeoutStopSec=15
+KillMode=none
 
 ExecStartPre=-/usr/bin/docker stop tranzit-api
 ExecStartPre=-/usr/bin/docker rm tranzit-api
 ExecStart=/usr/bin/docker run \
   --name tranzit-api \
-  --rm \
   --env-file /etc/tranzit/api.env \
   -p 34001:34001 \
   --log-driver=journald \
   --log-opt tag=tranzit-api \
   tranzit-api:latest
-ExecStop=/usr/bin/docker stop tranzit-api
+ExecStop=/usr/bin/docker stop -t 10 tranzit-api
+ExecStopPost=-/usr/bin/docker rm -f tranzit-api
 
-StandardOutput=journal
-StandardError=journal
+StandardOutput=null
+StandardError=null
 SyslogIdentifier=tranzit-api-docker
 
 [Install]
