@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
+import { auth } from './auth'
 
 const app = new Hono()
 
@@ -11,6 +12,9 @@ app.use('*', cors({
 }))
 
 app.get('/api/v1/health', (c) => c.json({ status: 'ok', ts: new Date().toISOString() }))
+
+// Monter toutes les routes Better Auth
+app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw))
 
 export default app
 
