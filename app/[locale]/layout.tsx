@@ -5,22 +5,7 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getMessages } from "next-intl/server";
 
 import { routing } from "@/i18n/routing";
-import { AppSidebar } from "@/components/app-sidebar";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/sidebar";
-import {
-  ThemeProvider,
-  AppBar,
-  AppBarLogo,
-  AppBarActions,
-  ThemeToggle,
-  NotificationButton,
-  AppBarAvatar,
-} from "@/components/app-bar";
-import { LanguageSwitcher } from "@/components/language-switcher";
+import { Shell } from "./shell";
 
 const nunitoSans = Nunito_Sans({ variable: "--font-sans", subsets: ["latin"] });
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -54,27 +39,7 @@ export default async function LocaleLayout({
       <div
         className={`${nunitoSans.variable} ${geistSans.variable} ${geistMono.variable} antialiased pt-12`}
       >
-        <ThemeProvider>
-          <SidebarProvider defaultPinned={false}>
-            <AppBar>
-              <div className="flex items-center gap-2">
-                <SidebarTrigger />
-                <AppBarLogo />
-              </div>
-              <AppBarActions>
-                <LanguageSwitcher />
-                <ThemeToggle />
-                <NotificationButton count={3} />
-                <AppBarAvatar
-                  name="Zakaria K."
-                  email="zakaria@tranzit.app"
-                />
-              </AppBarActions>
-            </AppBar>
-            <AppSidebar />
-            <SidebarInset>{children}</SidebarInset>
-          </SidebarProvider>
-        </ThemeProvider>
+        <Shell>{children}</Shell>
       </div>
     </NextIntlClientProvider>
   );
